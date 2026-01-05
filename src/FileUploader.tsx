@@ -33,6 +33,7 @@ export function FileUploader() {
                     src: result,
                     x: 100 + (prev.length * 30),
                     y: 200,
+                    zIndex: 1,
                 } as CanvasImage,
             ])
 

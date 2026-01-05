@@ -1,13 +1,7 @@
 import { type ReactNode } from 'react'
 import { FilesContext } from './FilesContext.1'
 import { useLocalStorage } from '@uidotdev/usehooks'
-
-interface CanvasImage {
-    id: string
-    src: string
-    x: number
-    y: number
-}
+import type { CanvasImage } from './types'
 
 export interface FilesContextType {
     uploadedFiles: CanvasImage[]

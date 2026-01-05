@@ -17,9 +17,15 @@ export function Canvas() {
             const nextY = e.clientY - rect.top - offsetY
 
             setUploadedFiles(prev =>
-                prev.map(img => (img.id === id ? { ...img, x: nextX, y: nextY } : img))
+                prev.map(img => (img.id === id ? { ...img, x: nextX, y: nextY, zIndex: 1 } : {...img, zIndex: 0}))
             )
         }
+    }
+
+    const handleImageClick = (id: string) => {
+        setUploadedFiles(prev =>
+            prev.map(img => (img.id === id ? { ...img, zIndex: 1 } : {...img, zIndex: 0}))
+        )
     }
 
     return (
@@ -31,6 +37,7 @@ export function Canvas() {
         >
             {uploadedFiles.map((img) => (
                 <img
+                    onClick={() => handleImageClick(img.id)}
                     key={img.id}
                     src={img.src}
                     draggable
@@ -43,7 +50,7 @@ export function Canvas() {
                     style={{
                         position: 'absolute', left: `${img.x}px`, top: `${img.y}px`,
                         width: '200px', cursor: 'grab', borderRadius: '4px', border: '2px solid white',
-                        boxShadow: '0 8px 16px rgba(0,0,0,0.15)', zIndex: 5
+                        boxShadow: '0 8px 16px rgba(0,0,0,0.15)', zIndex: `${img.zIndex}`,
                     }}
                 />
             ))}

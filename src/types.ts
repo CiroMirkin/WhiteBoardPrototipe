@@ -3,6 +3,7 @@ export interface CanvasImage {
     src: string
     x: number
     y: number
+    zIndex: number
 }
 
 export interface FilesContextType {
