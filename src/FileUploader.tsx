@@ -34,6 +34,7 @@ export function FileUploader() {
                     x: 100 + (prev.length * 30),
                     y: 200,
                     zIndex: 1,
+                    type: 'img',
                 } as CanvasImage,
             ])
 
@@ -45,7 +46,7 @@ export function FileUploader() {
     }
 
     return (
-        <div style={{ maxWidth: '500px', margin: '20px auto', position: 'relative', zIndex: 10 }}>
+        <div style={{ width: '500px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
             <FilePond
                 allowMultiple={true}
                 maxFiles={40}
