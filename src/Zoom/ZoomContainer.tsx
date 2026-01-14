@@ -1,5 +1,5 @@
 import React from 'react'
-import { ZoomControls } from './Zoom/ZoomControls'
+import { ZoomControls } from './ZoomControls'
 
 interface ZoomContainerProps {
   children: React.ReactNode

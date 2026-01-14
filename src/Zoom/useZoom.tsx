@@ -1,5 +1,5 @@
 import { useContext, createContext } from 'react'
-import type { ZoomContextType } from './types'
+import type { ZoomContextType } from './ZoomContextType'
 
 export const ZoomContext = createContext<ZoomContextType | undefined>(undefined)
 
