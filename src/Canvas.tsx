@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import { useFiles } from './useFiles'
 import type { CanvasImage } from './types'
 import { useZoom } from './Zoom/useZoom'
@@ -7,41 +7,45 @@ import { CanvasItem } from './CanvasItem'
 export function Canvas() {
     const { uploadedFiles, setUploadedFiles } = useFiles()
     const { zoom, panX, panY, setPan } = useZoom()
-    const [dragging, setDragging] = useState({
-        state: false,
-        imageId: '',
-    })
+    const [draggingId, setDraggingId] = useState<string | null>(null)
     const [isPanning, setIsPanning] = useState(false)
     const [lastMouseX, setLastMouseX] = useState(0)
     const [lastMouseY, setLastMouseY] = useState(0)
     const canvasRef = useRef<HTMLDivElement>(null)
+    const dragOffsetRef = useRef({ x: 0, y: 0 })
+    const lastUpdateRef = useRef(0)
+    const THROTTLE_MS = 16 // ~60fps
 
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault()
-        const id = e.dataTransfer.getData('image-id')
-        const offsetX = parseFloat(e.dataTransfer.getData('offset-x'))
-        const offsetY = parseFloat(e.dataTransfer.getData('offset-y'))
-
-        if (canvasRef.current) {
-            const rect = canvasRef.current.getBoundingClientRect()
-            const nextX = (e.clientX - rect.left - offsetX) / zoom
-            const nextY = (e.clientY - rect.top - offsetY) / zoom
-
-            setUploadedFiles(prev =>
-                prev.map(img => (img.id === id ? { ...img, x: nextX, y: nextY, zIndex: 1 } : { ...img, zIndex: 0 }))
-            )
-            setDragging({ state: false, imageId: '' })
-        }
-    }
+    const updateItemPosition = useCallback((id: string, x: number, y: number) => {
+        setUploadedFiles(prev =>
+            prev.map(img => img.id === id ? { ...img, x, y } : img)
+        )
+    }, [setUploadedFiles])
 
     const handleImageClick = (id: string) => {
+        if (draggingId) return // Prevent click during drag
         setUploadedFiles(prev =>
             prev.map(img => (img.id === id ? { ...img, zIndex: 1 } : { ...img, zIndex: 0 }))
         )
     }
 
-    const handleItemDragStart = (id: string) => {
-        setDragging({ state: true, imageId: id })
+    const handleItemMouseDown = (id: string, clientX: number, clientY: number) => {
+        const item = uploadedFiles.find(img => img.id === id)
+        if (!item || !canvasRef.current) return
+
+        const rect = canvasRef.current.getBoundingClientRect()
+        const canvasX = (clientX - rect.left) / zoom - panX
+        const canvasY = (clientY - rect.top) / zoom - panY
+
+        dragOffsetRef.current = {
+            x: canvasX - item.x,
+            y: canvasY - item.y
+        }
+
+        setDraggingId(id)
+        setUploadedFiles(prev =>
+            prev.map(img => (img.id === id ? { ...img, zIndex: 1 } : { ...img, zIndex: 0 }))
+        )
     }
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -53,32 +57,46 @@ export function Canvas() {
         }
     }
 
-    const handleMouseMove = (e: React.MouseEvent) => {
+    const handleMouseMove = useCallback((e: React.MouseEvent) => {
         if (isPanning) {
             const deltaX = (e.clientX - lastMouseX) / zoom
             const deltaY = (e.clientY - lastMouseY) / zoom
             setPan(panX + deltaX, panY + deltaY)
             setLastMouseX(e.clientX)
             setLastMouseY(e.clientY)
-        }
-    }
+        } else if (draggingId && canvasRef.current) {
+            const now = Date.now()
+            if (now - lastUpdateRef.current < THROTTLE_MS) return
+            lastUpdateRef.current = now
 
-    const handleMouseUp = (e: React.MouseEvent) => {
+            const rect = canvasRef.current.getBoundingClientRect()
+            const canvasX = (e.clientX - rect.left) / zoom - panX
+            const canvasY = (e.clientY - rect.top) / zoom - panY
+
+            const newX = canvasX - dragOffsetRef.current.x
+            const newY = canvasY - dragOffsetRef.current.y
+
+            updateItemPosition(draggingId, newX, newY)
+        }
+    }, [isPanning, draggingId, lastMouseX, lastMouseY, zoom, panX, panY, setPan, updateItemPosition])
+
+    const handleMouseUp = useCallback((e: React.MouseEvent) => {
         if (e.button === 1) {
             setIsPanning(false)
         }
-    }
+        if (draggingId) {
+            setDraggingId(null)
+        }
+    }, [draggingId])
 
     return (
         <div
             ref={canvasRef}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDrop}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
-            style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0', cursor: isPanning ? 'grabbing' : 'default' }}
+            style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0', cursor: isPanning ? 'grabbing' : draggingId ? 'grabbing' : 'default' }}
         >
             <div
                 style={{
@@ -93,9 +111,9 @@ export function Canvas() {
                     <CanvasItem
                         key={file.id}
                         item={file}
-                        isDragging={dragging.state && dragging.imageId === file.id}
+                        isDragging={draggingId === file.id}
                         onItemClick={handleImageClick}
-                        onItemDragStart={handleItemDragStart}
+                        onItemMouseDown={handleItemMouseDown}
                     />
                 ))}
             </div>
