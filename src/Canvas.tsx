@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { useFiles } from './useFiles'
 import type { CanvasImage } from './types'
 import { useZoom } from './Zoom/useZoom'
@@ -7,7 +7,7 @@ import { CanvasContextMenu } from './ContextMenu/CanvasContextMenu'
 
 export function Canvas() {
     const { uploadedFiles, setUploadedFiles } = useFiles()
-    const { zoom, panX, panY, setPan } = useZoom()
+    const { zoom, setZoom, panX, panY, setPan } = useZoom()
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const [isPanning, setIsPanning] = useState(false)
     const [lastMouseX, setLastMouseX] = useState(0)
@@ -111,6 +111,40 @@ export function Canvas() {
             setDraggingId(null)
         }
     }, [draggingId, updateItemPosition])
+
+    const handleWheel = useCallback((e: Event) => {
+        const wheelEvent = e as WheelEvent
+        wheelEvent.preventDefault()
+        if (!canvasRef.current) return
+
+        const rect = canvasRef.current.getBoundingClientRect()
+        const mouseX = wheelEvent.clientX - rect.left
+        const mouseY = wheelEvent.clientY - rect.top
+
+        const canvasMouseX = mouseX / zoom - panX
+        const canvasMouseY = mouseY / zoom - panY
+
+        const zoomFactor = wheelEvent.deltaY > 0 ? 0.9 : 1.1
+        const newZoom = Math.max(0.1, Math.min(5, zoom * zoomFactor))
+
+        const newPanX = mouseX / newZoom - canvasMouseX
+        const newPanY = mouseY / newZoom - canvasMouseY
+
+        setZoom(newZoom)
+        setPan(newPanX, newPanY)
+    }, [zoom, panX, panY, setZoom, setPan])
+
+    useEffect(() => {
+        const canvas = canvasRef.current
+        if (canvas) {
+            canvas.addEventListener('wheel', handleWheel, { passive: false })
+        }
+        return () => {
+            if (canvas) {
+                canvas.removeEventListener('wheel', handleWheel)
+            }
+        }
+    }, [handleWheel])
 
     const handleDelete = (id: string) => {
         setUploadedFiles(prev => prev.filter(img => img.id !== id))
