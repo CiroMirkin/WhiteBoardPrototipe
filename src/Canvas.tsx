@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useFiles } from './useFiles'
 import type { CanvasImage } from './types'
-import { useZoom } from './useZoom'
+import { useZoom } from './Zoom/useZoom'
 import { CanvasItem } from './CanvasItem'
 
 export function Canvas() {

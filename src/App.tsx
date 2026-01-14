@@ -8,8 +8,8 @@ import { FilesProvider } from './FilesProvider'
 import { FileUploader } from './FileUploader'
 import { Canvas } from './Canvas'
 import AddText from './AddText'
-import { ZoomContainer } from './ZoomContainer'
-import { ZoomProvider } from './ZoomContext'
+import { ZoomContainer } from './Zoom/ZoomContainer'
+import { ZoomProvider } from './Zoom/ZoomContext'
 
 registerPlugin(FilePondPluginImagePreview, FilePondPluginImageExifOrientation)
 
