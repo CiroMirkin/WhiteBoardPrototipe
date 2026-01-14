@@ -12,15 +12,25 @@ export function Canvas() {
     const [lastMouseX, setLastMouseX] = useState(0)
     const [lastMouseY, setLastMouseY] = useState(0)
     const canvasRef = useRef<HTMLDivElement>(null)
+    const itemRefs = useRef(new Map<string, HTMLElement>())
     const dragOffsetRef = useRef({ x: 0, y: 0 })
     const lastUpdateRef = useRef(0)
-    const THROTTLE_MS = 16 // ~60fps
+    const THROTTLE_MS = 8 // ~120fps
+    const currentDragPosition = useRef({ x: 0, y: 0 })
 
     const updateItemPosition = useCallback((id: string, x: number, y: number) => {
         setUploadedFiles(prev =>
             prev.map(img => img.id === id ? { ...img, x, y } : img)
         )
     }, [setUploadedFiles])
+
+    const refCallback = useCallback((id: string, el: HTMLElement | null) => {
+        if (el) {
+            itemRefs.current.set(id, el)
+        } else {
+            itemRefs.current.delete(id)
+        }
+    }, [])
 
     const handleImageClick = (id: string) => {
         if (draggingId) return // Prevent click during drag
@@ -46,6 +56,12 @@ export function Canvas() {
         setUploadedFiles(prev =>
             prev.map(img => (img.id === id ? { ...img, zIndex: 1 } : { ...img, zIndex: 0 }))
         )
+
+        const element = itemRefs.current.get(id)
+        if (element) {
+            element.style.transform = `translate(${item.x}px, ${item.y}px) scale(1.05)`
+            element.style.willChange = 'transform'
+        }
     }
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -76,18 +92,24 @@ export function Canvas() {
             const newX = canvasX - dragOffsetRef.current.x
             const newY = canvasY - dragOffsetRef.current.y
 
-            updateItemPosition(draggingId, newX, newY)
+            currentDragPosition.current = { x: newX, y: newY }
+
+            const element = itemRefs.current.get(draggingId)
+            if (element) {
+                element.style.transform = `translate(${newX}px, ${newY}px) scale(1.05)`
+            }
         }
-    }, [isPanning, draggingId, lastMouseX, lastMouseY, zoom, panX, panY, setPan, updateItemPosition])
+    }, [isPanning, draggingId, lastMouseX, lastMouseY, zoom, panX, panY, setPan])
 
     const handleMouseUp = useCallback((e: React.MouseEvent) => {
         if (e.button === 1) {
             setIsPanning(false)
         }
         if (draggingId) {
+            updateItemPosition(draggingId, currentDragPosition.current.x, currentDragPosition.current.y)
             setDraggingId(null)
         }
-    }, [draggingId])
+    }, [draggingId, updateItemPosition])
 
     return (
         <div
@@ -114,6 +136,7 @@ export function Canvas() {
                         isDragging={draggingId === file.id}
                         onItemClick={handleImageClick}
                         onItemMouseDown={handleItemMouseDown}
+                        refCallback={refCallback}
                     />
                 ))}
             </div>

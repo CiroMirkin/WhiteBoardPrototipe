@@ -6,20 +6,22 @@ interface CanvasItemProps {
   isDragging: boolean
   onItemClick: (id: string) => void
   onItemMouseDown: (id: string, clientX: number, clientY: number) => void
+  refCallback: (id: string, el: HTMLElement | null) => void
 }
 
-export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItemClick, onItemMouseDown }) => {
+export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItemClick, onItemMouseDown, refCallback }) => {
   const style: React.CSSProperties = {
     position: 'absolute',
-    left: `${item.x}px`,
-    top: `${item.y}px`,
+    left: 0,
+    top: 0,
     zIndex: item.zIndex,
     opacity: isDragging ? 0.8 : 1,
     cursor: isDragging ? 'grabbing' : 'grab',
     borderRadius: '4px',
     transition: isDragging ? 'none' : 'opacity 0.1s ease-out',
-    transform: isDragging ? 'scale(1.05)' : 'scale(1)',
+    transform: `translate(${item.x}px, ${item.y}px) ${isDragging ? 'scale(1.05)' : 'scale(1)'}`,
     transformOrigin: 'center',
+    willChange: isDragging ? 'transform' : 'auto',
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -30,6 +32,7 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItem
   if (item.type !== 'text') {
     return (
       <img
+        ref={(el) => refCallback(item.id, el)}
         onClick={() => onItemClick(item.id)}
         onMouseDown={handleMouseDown}
         key={item.id}
@@ -45,6 +48,7 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItem
   } else {
     return (
       <p
+        ref={(el) => refCallback(item.id, el)}
         key={item.id}
         style={{
           ...style,
