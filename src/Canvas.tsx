@@ -6,11 +6,14 @@ import { CanvasItem } from './CanvasItem'
 
 export function Canvas() {
     const { uploadedFiles, setUploadedFiles } = useFiles()
-    const { zoom } = useZoom()
+    const { zoom, panX, panY, setPan } = useZoom()
     const [dragging, setDragging] = useState({
         state: false,
         imageId: '',
     })
+    const [isPanning, setIsPanning] = useState(false)
+    const [lastMouseX, setLastMouseX] = useState(0)
+    const [lastMouseY, setLastMouseY] = useState(0)
     const canvasRef = useRef<HTMLDivElement>(null)
 
     const handleDrop = (e: React.DragEvent) => {
@@ -41,20 +44,49 @@ export function Canvas() {
         setDragging({ state: true, imageId: id })
     }
 
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (e.button === 1) { // Middle mouse button
+            setIsPanning(true)
+            setLastMouseX(e.clientX)
+            setLastMouseY(e.clientY)
+            e.preventDefault()
+        }
+    }
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (isPanning) {
+            const deltaX = (e.clientX - lastMouseX) / zoom
+            const deltaY = (e.clientY - lastMouseY) / zoom
+            setPan(panX + deltaX, panY + deltaY)
+            setLastMouseX(e.clientX)
+            setLastMouseY(e.clientY)
+        }
+    }
+
+    const handleMouseUp = (e: React.MouseEvent) => {
+        if (e.button === 1) {
+            setIsPanning(false)
+        }
+    }
+
     return (
         <div
             ref={canvasRef}
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
-            style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0' }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0', cursor: isPanning ? 'grabbing' : 'default' }}
         >
             <div
                 style={{
                     width: '100%',
                     height: '100%',
-                    transform: `scale(${zoom})`,
+                    transform: `scale(${zoom}) translate(${panX}px, ${panY}px)`,
                     transformOrigin: 'top left',
-                    transition: 'transform 0.2s ease-out',
+                    transition: isPanning ? 'none' : 'transform 0.2s ease-out',
                 }}
             >
                 {uploadedFiles.map((file: CanvasImage) => (
