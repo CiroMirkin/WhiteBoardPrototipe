@@ -19,10 +19,10 @@ function App() {
       <ZoomProvider>
         <div style={{ position: 'relative' }}>
           <div style={{ position: 'absolute', width: '100%', zIndex: 20, pointerEvents: 'none' }}>
-            <div style={{ pointerEvents: 'auto', display: 'flex', margin: '.5rem 6rem' }}>
+            <header style={{ pointerEvents: 'auto', display: 'flex', margin: '.5rem 6rem' }}>
               <AddText />
               <FileUploader />
-            </div>
+            </header>
           </div>
           <ZoomContainer>
             <Canvas />
