@@ -3,6 +3,7 @@ import { useFiles } from './useFiles'
 import type { CanvasImage } from './types'
 import { useZoom } from './Zoom/useZoom'
 import { CanvasItem } from './CanvasItem'
+import { CanvasContextMenu } from './ContextMenu/CanvasContextMenu'
 
 export function Canvas() {
     const { uploadedFiles, setUploadedFiles } = useFiles()
@@ -111,35 +112,45 @@ export function Canvas() {
         }
     }, [draggingId, updateItemPosition])
 
+    const handleDelete = (id: string) => {
+        setUploadedFiles(prev => prev.filter(img => img.id !== id))
+    }
+
     return (
-        <div
-            ref={canvasRef}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0', cursor: isPanning ? 'grabbing' : draggingId ? 'grabbing' : 'default' }}
-        >
-            <div
-                style={{
-                    width: '100%',
-                    height: '100%',
-                    transform: `scale(${zoom}) translate(${panX}px, ${panY}px)`,
-                    transformOrigin: 'top left',
-                    transition: isPanning ? 'none' : 'transform 0.2s ease-out',
-                }}
-            >
-                {uploadedFiles.map((file: CanvasImage) => (
-                    <CanvasItem
-                        key={file.id}
-                        item={file}
-                        isDragging={draggingId === file.id}
-                        onItemClick={handleImageClick}
-                        onItemMouseDown={handleItemMouseDown}
-                        refCallback={refCallback}
-                    />
-                ))}
-            </div>
-        </div>
+        <CanvasContextMenu onDelete={handleDelete}>
+            {(showMenu, closeMenu) => (
+                <div
+                    ref={canvasRef}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onClick={closeMenu}
+                    style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0', cursor: isPanning ? 'grabbing' : draggingId ? 'grabbing' : 'default' }}
+                >
+                    <div
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            transform: `scale(${zoom}) translate(${panX}px, ${panY}px)`,
+                            transformOrigin: 'top left',
+                            transition: isPanning ? 'none' : 'transform 0.2s ease-out',
+                        }}
+                    >
+                        {uploadedFiles.map((file: CanvasImage) => (
+                            <CanvasItem
+                                key={file.id}
+                                item={file}
+                                isDragging={draggingId === file.id}
+                                onItemClick={handleImageClick}
+                                onItemMouseDown={handleItemMouseDown}
+                                onContextMenu={showMenu}
+                                refCallback={refCallback}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+        </CanvasContextMenu>
     )
 }

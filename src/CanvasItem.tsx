@@ -6,10 +6,11 @@ interface CanvasItemProps {
   isDragging: boolean
   onItemClick: (id: string) => void
   onItemMouseDown: (id: string, clientX: number, clientY: number) => void
+  onContextMenu: (id: string, x: number, y: number) => void
   refCallback: (id: string, el: HTMLElement | null) => void
 }
 
-export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItemClick, onItemMouseDown, refCallback }) => {
+export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItemClick, onItemMouseDown, onContextMenu, refCallback }) => {
   const style: React.CSSProperties = {
     position: 'absolute',
     left: 0,
@@ -25,9 +26,17 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItem
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // Only left click for dragging
     e.preventDefault()
     onItemMouseDown(item.id, e.clientX, e.clientY)
   }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    onContextMenu(item.id, e.clientX, e.clientY)
+  }
+
+
 
   if (item.type !== 'text') {
     return (
@@ -35,6 +44,7 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItem
         ref={(el) => refCallback(item.id, el)}
         onClick={() => onItemClick(item.id)}
         onMouseDown={handleMouseDown}
+        onContextMenu={handleContextMenu}
         key={item.id}
         src={item.src}
         style={{
@@ -61,6 +71,7 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItem
         }}
         onClick={() => onItemClick(item.id)}
         onMouseDown={handleMouseDown}
+        onContextMenu={handleContextMenu}
       >
         {item.value}
       </p>

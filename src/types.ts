@@ -11,6 +11,7 @@ export interface CanvasImage {
 export interface FilesContextType {
     uploadedFiles: CanvasImage[]
     setUploadedFiles: React.Dispatch<React.SetStateAction<CanvasImage[]>>
+    removeFile: (id: string) => void
 }
 
 export interface FilesProviderProps {
