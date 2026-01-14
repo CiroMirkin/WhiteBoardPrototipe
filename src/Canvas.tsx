@@ -160,7 +160,7 @@ export function Canvas() {
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
                     onClick={closeMenu}
-                    style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0', cursor: isPanning ? 'grabbing' : draggingId ? 'grabbing' : 'default' }}
+                    style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0', cursor: isPanning ? 'grabbing' : draggingId ? 'grabbing' : 'default', userSelect: 'none' }}
                 >
                     <div
                         style={{

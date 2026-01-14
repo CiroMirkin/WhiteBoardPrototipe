@@ -23,6 +23,7 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItem
     transform: `translate(${item.x}px, ${item.y}px) ${isDragging ? 'scale(1.05)' : 'scale(1)'}`,
     transformOrigin: 'center',
     willChange: isDragging ? 'transform' : 'auto',
+    userSelect: 'none',
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
