@@ -4,25 +4,31 @@ import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
 import 'filepond/dist/filepond.min.css'
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css'
 
-import { FilesProvider } from './FilesContext'
+import { FilesProvider } from './FilesProvider'
 import { FileUploader } from './FileUploader'
 import { Canvas } from './Canvas'
 import AddText from './AddText'
+import { ZoomContainer } from './ZoomContainer'
+import { ZoomProvider } from './ZoomContext'
 
 registerPlugin(FilePondPluginImagePreview, FilePondPluginImageExifOrientation)
 
 function App() {
   return (
     <FilesProvider>
-      <div style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', width: '100%', zIndex: 20, pointerEvents: 'none' }}>
-          <div style={{ pointerEvents: 'auto', display: 'flex', margin: '.5rem 6rem' }}>
-            <AddText />
-            <FileUploader />
+      <ZoomProvider>
+        <div style={{ position: 'relative' }}>
+          <div style={{ position: 'absolute', width: '100%', zIndex: 20, pointerEvents: 'none' }}>
+            <div style={{ pointerEvents: 'auto', display: 'flex', margin: '.5rem 6rem' }}>
+              <AddText />
+              <FileUploader />
+            </div>
           </div>
+          <ZoomContainer>
+            <Canvas />
+          </ZoomContainer>
         </div>
-        <Canvas />
-      </div>
+      </ZoomProvider>
     </FilesProvider>
   )
 }

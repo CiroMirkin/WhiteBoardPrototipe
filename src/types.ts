@@ -12,3 +12,7 @@ export interface FilesContextType {
     uploadedFiles: CanvasImage[]
     setUploadedFiles: React.Dispatch<React.SetStateAction<CanvasImage[]>>
 }
+
+export interface FilesProviderProps {
+    children: React.ReactNode
+}
