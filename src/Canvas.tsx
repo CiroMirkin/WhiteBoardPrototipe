@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react'
 import { useFiles } from './useFiles'
 import type { CanvasImage } from './types'
+import { useZoom } from './useZoom'
 import { CanvasItem } from './CanvasItem'
 
 export function Canvas() {
     const { uploadedFiles, setUploadedFiles } = useFiles()
+    const { zoom } = useZoom()
     const [dragging, setDragging] = useState({
         state: false,
         imageId: '',
@@ -19,8 +21,8 @@ export function Canvas() {
 
         if (canvasRef.current) {
             const rect = canvasRef.current.getBoundingClientRect()
-            const nextX = (e.clientX - rect.left - offsetX)
-            const nextY = (e.clientY - rect.top - offsetY)
+            const nextX = (e.clientX - rect.left - offsetX) / zoom
+            const nextY = (e.clientY - rect.top - offsetY) / zoom
 
             setUploadedFiles(prev =>
                 prev.map(img => (img.id === id ? { ...img, x: nextX, y: nextY, zIndex: 1 } : { ...img, zIndex: 0 }))
@@ -50,6 +52,7 @@ export function Canvas() {
                 style={{
                     width: '100%',
                     height: '100%',
+                    transform: `scale(${zoom})`,
                     transformOrigin: 'top left',
                     transition: 'transform 0.2s ease-out',
                 }}

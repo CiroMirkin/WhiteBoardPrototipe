@@ -16,3 +16,8 @@ export interface FilesContextType {
 export interface FilesProviderProps {
     children: React.ReactNode
 }
+
+export interface ZoomContextType {
+    zoom: number
+    setZoom: React.Dispatch<React.SetStateAction<number>>
+}
