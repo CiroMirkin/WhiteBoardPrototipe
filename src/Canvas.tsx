@@ -53,6 +53,8 @@ export function Canvas() {
             y: canvasY - item.y
         }
 
+        currentDragPosition.current = { x: item.x, y: item.y }
+
         setDraggingId(id)
         setUploadedFiles(prev =>
             prev.map(img => (img.id === id ? { ...img, zIndex: 1 } : { ...img, zIndex: 0 }))
