@@ -71,7 +71,7 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItem
             backgroundColor: 'rgba(0,0,0,0.15)',
             color: '#000',
             fontWeight: '700',
-            fontSize: '2.5ch',
+            fontSize: (item.fontSize || 20) + 'px',
           }}
           onClick={() => onItemClick(item.id)}
           onMouseDown={handleMouseDown}

@@ -8,6 +8,7 @@ export interface CanvasImage {
     value?: string
     width?: number
     height?: number
+    fontSize?: number
 }
 
 export interface FilesContextType {

@@ -26,9 +26,9 @@ export function Canvas() {
         )
     }, [setUploadedFiles])
 
-    const updateItemSize = useCallback((id: string, width: number, height: number) => {
+    const updateItemSize = useCallback((id: string, width: number, height: number, fontSize?: number) => {
         setUploadedFiles(prev =>
-            prev.map(img => img.id === id ? { ...img, width, height } : img)
+            prev.map(img => img.id === id ? { ...img, width, height, ...(fontSize !== undefined ? { fontSize } : {}) } : img)
         )
     }, [setUploadedFiles])
 
@@ -127,14 +127,26 @@ export function Canvas() {
         if (!canvasRef.current) return
 
         if (resizingId) {
-            const element = itemRefs.current.get(resizingId)
-            if (element) {
-                const currentWidth = element.offsetWidth
-                const currentHeight = element.offsetHeight
+            // Resize the element
+            const item = uploadedFiles.find(f => f.id === resizingId)
+            if (item) {
                 const scale = wheelEvent.deltaY > 0 ? 0.9 : 1.1
-                const newWidth = Math.max(20, currentWidth * scale)
-                const newHeight = Math.max(20, currentHeight * scale)
-                updateItemSize(resizingId, newWidth, newHeight)
+                if (item.type === 'text') {
+                    const currentFontSize = item.fontSize || 20
+                    const newFontSize = Math.max(10, currentFontSize * scale)
+                    const newWidth = item.width ? Math.max(20, item.width * scale) : 0
+                    const newHeight = item.height ? Math.max(20, item.height * scale) : 0
+                    updateItemSize(resizingId, newWidth, newHeight, newFontSize)
+                } else {
+                    const element = itemRefs.current.get(resizingId)
+                    if (element) {
+                        const currentWidth = element.offsetWidth
+                        const currentHeight = element.offsetHeight
+                        const newWidth = Math.max(20, currentWidth * scale)
+                        const newHeight = Math.max(20, currentHeight * scale)
+                        updateItemSize(resizingId, newWidth, newHeight)
+                    }
+                }
             }
             return
         }
@@ -154,7 +166,7 @@ export function Canvas() {
 
         setZoom(newZoom)
         setPan(newPanX, newPanY)
-    }, [zoom, panX, panY, setZoom, setPan, resizingId, updateItemSize])
+    }, [zoom, panX, panY, setZoom, setPan, resizingId, updateItemSize, uploadedFiles])
 
     useEffect(() => {
         const canvas = canvasRef.current
