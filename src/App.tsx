@@ -19,9 +19,10 @@ function App() {
       <ZoomProvider>
         <div style={{ position: 'relative' }}>
           <div style={{ position: 'absolute', width: '100%', zIndex: 20, pointerEvents: 'none' }}>
-            <header style={{ pointerEvents: 'auto', display: 'flex', margin: '.5rem 6rem' }}>
+            <header style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', margin: '.5rem 6rem' }}>
               <AddText />
               <FileUploader />
+               <a href="https://github.com/CiroMirkin/WhiteBoardPrototipe" target="_blank">GitHub</a>
             </header>
           </div>
           <ZoomContainer>
