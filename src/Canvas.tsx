@@ -9,6 +9,7 @@ export function Canvas() {
     const { uploadedFiles, setUploadedFiles } = useFiles()
     const { zoom, setZoom, panX, panY, setPan } = useZoom()
     const [draggingId, setDraggingId] = useState<string | null>(null)
+    const [resizingId, setResizingId] = useState<string | null>(null)
     const [isPanning, setIsPanning] = useState(false)
     const [lastMouseX, setLastMouseX] = useState(0)
     const [lastMouseY, setLastMouseY] = useState(0)
@@ -22,6 +23,12 @@ export function Canvas() {
     const updateItemPosition = useCallback((id: string, x: number, y: number) => {
         setUploadedFiles(prev =>
             prev.map(img => img.id === id ? { ...img, x, y } : img)
+        )
+    }, [setUploadedFiles])
+
+    const updateItemSize = useCallback((id: string, width: number, height: number) => {
+        setUploadedFiles(prev =>
+            prev.map(img => img.id === id ? { ...img, width, height } : img)
         )
     }, [setUploadedFiles])
 
@@ -119,6 +126,19 @@ export function Canvas() {
         wheelEvent.preventDefault()
         if (!canvasRef.current) return
 
+        if (resizingId) {
+            const element = itemRefs.current.get(resizingId)
+            if (element) {
+                const currentWidth = element.offsetWidth
+                const currentHeight = element.offsetHeight
+                const scale = wheelEvent.deltaY > 0 ? 0.9 : 1.1
+                const newWidth = Math.max(20, currentWidth * scale)
+                const newHeight = Math.max(20, currentHeight * scale)
+                updateItemSize(resizingId, newWidth, newHeight)
+            }
+            return
+        }
+
         const rect = canvasRef.current.getBoundingClientRect()
         const mouseX = wheelEvent.clientX - rect.left
         const mouseY = wheelEvent.clientY - rect.top
@@ -134,7 +154,7 @@ export function Canvas() {
 
         setZoom(newZoom)
         setPan(newPanX, newPanY)
-    }, [zoom, panX, panY, setZoom, setPan])
+    }, [zoom, panX, panY, setZoom, setPan, resizingId, updateItemSize])
 
     useEffect(() => {
         const canvas = canvasRef.current
@@ -148,12 +168,48 @@ export function Canvas() {
         }
     }, [handleWheel])
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey && (e.key === '+' || e.key === '=' || e.key === '-')) {
+                e.preventDefault()
+                const selected = uploadedFiles.find(f => f.zIndex === 1)
+                if (selected) {
+                    const element = itemRefs.current.get(selected.id)
+                    if (element) {
+                        const currentWidth = element.offsetWidth
+                        const currentHeight = element.offsetHeight
+                        const scale = (e.key === '+' || e.key === '=') ? 1.1 : 0.9
+                        const newWidth = Math.max(20, currentWidth * scale)
+                        const newHeight = Math.max(20, currentHeight * scale)
+                        updateItemSize(selected.id, newWidth, newHeight)
+                    }
+                }
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [uploadedFiles, updateItemSize])
+
     const handleDelete = (id: string) => {
         setUploadedFiles(prev => prev.filter(img => img.id !== id))
     }
 
+    const handleOnCloseCanvasContextMenu = (e?: React.MouseEvent) => { 
+        if (resizingId && e) { 
+            const target = e.target as HTMLElement
+            const resizingEl = itemRefs.current.get(resizingId)
+            if (resizingEl && !resizingEl.contains(target)) { 
+                setResizingId(null) 
+            } 
+        } 
+    }
+
     return (
-        <CanvasContextMenu onDelete={handleDelete}>
+        <CanvasContextMenu 
+            onDelete={handleDelete} 
+            onResize={(id) => setResizingId(id)} 
+            onClose={(e) => handleOnCloseCanvasContextMenu(e)}
+        >
             {(showMenu, closeMenu) => (
                 <div
                     ref={canvasRef}
@@ -161,7 +217,7 @@ export function Canvas() {
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
-                    onClick={closeMenu}
+                    onClick={(e) => closeMenu(e)}
                     style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0', cursor: isPanning ? 'grabbing' : draggingId ? 'grabbing' : 'default', userSelect: 'none' }}
                 >
                     <div

@@ -6,6 +6,8 @@ export interface CanvasImage {
     zIndex: number
     type?: 'text' | 'img'
     value?: string
+    width?: number
+    height?: number
 }
 
 export interface FilesContextType {

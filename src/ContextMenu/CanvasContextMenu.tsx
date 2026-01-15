@@ -3,10 +3,12 @@ import { ContextMenu } from './ContextMenu'
 
 interface CanvasContextMenuProps {
   onDelete: (id: string) => void
-  children: (showMenu: (id: string, x: number, y: number) => void, closeMenu: () => void) => React.ReactNode
+  onResize: (id: string) => void
+  onClose?: (e?: React.MouseEvent) => void
+  children: (showMenu: (id: string, x: number, y: number) => void, closeMenu: (e?: React.MouseEvent) => void) => React.ReactNode
 }
 
-export const CanvasContextMenu = ({ onDelete, children }: CanvasContextMenuProps) => {
+export const CanvasContextMenu = ({ onDelete, onResize, onClose, children }: CanvasContextMenuProps) => {
   const [contextMenu, setContextMenu] = useState<{ visible: boolean, x: number, y: number, itemId: string }>({ visible: false, x: 0, y: 0, itemId: '' })
 
   const showMenu = (id: string, x: number, y: number) => {
@@ -18,7 +20,13 @@ export const CanvasContextMenu = ({ onDelete, children }: CanvasContextMenuProps
     setContextMenu({ ...contextMenu, visible: false })
   }
 
-  const closeMenu = () => {
+  const handleResize = () => {
+    onResize(contextMenu.itemId)
+    setContextMenu({ ...contextMenu, visible: false })
+  }
+
+  const closeMenu = (e?: React.MouseEvent) => {
+    if (onClose) onClose(e)
     setContextMenu({ ...contextMenu, visible: false })
   }
 
@@ -30,6 +38,7 @@ export const CanvasContextMenu = ({ onDelete, children }: CanvasContextMenuProps
           x={contextMenu.x}
           y={contextMenu.y}
           onDelete={handleDelete}
+          onResize={handleResize}
           onClose={closeMenu}
         />
       )}

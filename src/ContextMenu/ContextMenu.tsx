@@ -3,10 +3,11 @@ interface ContextMenuProps {
   x: number
   y: number
   onDelete: () => void
+  onResize: () => void
   onClose: () => void
 }
 
-export const ContextMenu = ({ x, y, onDelete, onClose }: ContextMenuProps) => {
+export const ContextMenu = ({ x, y, onDelete, onResize, onClose }: ContextMenuProps) => {
   const handleDelete = () => {
     const confirmDelete = window.confirm('¿Estás seguro de que quieres eliminar este elemento?')
     
@@ -33,6 +34,20 @@ export const ContextMenu = ({ x, y, onDelete, onClose }: ContextMenuProps) => {
       }}
       onClick={(e) => e.stopPropagation()}
     >
+      <button
+        onClick={onResize}
+        style={{
+          width: '100%',
+          padding: '8px 16px',
+          border: 'none',
+          background: 'none',
+          textAlign: 'left',
+          cursor: 'pointer',
+          color: '#000',
+        }}
+      >
+        Redimensionar
+      </button>
       <button
         onClick={handleDelete}
         style={{

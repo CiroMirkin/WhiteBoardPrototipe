@@ -37,45 +37,49 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItem
     onContextMenu(item.id, e.clientX, e.clientY)
   }
 
-
-
   if (item.type !== 'text') {
     return (
-      <img
-        ref={(el) => refCallback(item.id, el)}
-        onClick={() => onItemClick(item.id)}
-        onMouseDown={handleMouseDown}
-        onContextMenu={handleContextMenu}
-        key={item.id}
-        src={item.src}
-        style={{
-          ...style,
-          width: '200px',
-          border: '2px solid white',
-          boxShadow: isDragging ? '0 12px 24px rgba(0,0,0,0.3)' : '0 8px 16px rgba(0,0,0,0.15)',
-        }}
-      />
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+        <img
+          ref={(el) => refCallback(item.id, el)}
+          onClick={() => onItemClick(item.id)}
+          onMouseDown={handleMouseDown}
+          onContextMenu={handleContextMenu}
+          key={item.id}
+          src={item.src}
+          style={{
+            ...style,
+            width: item.width || 200,
+            height: item.height || 'auto',
+            border: '2px solid white',
+            boxShadow: isDragging ? '0 12px 24px rgba(0,0,0,0.3)' : '0 8px 16px rgba(0,0,0,0.15)',
+          }}
+        />
+      </div>
     )
   } else {
     return (
-      <p
-        ref={(el) => refCallback(item.id, el)}
-        key={item.id}
-        style={{
-          ...style,
-          padding: '0 4px',
-          width: 'auto',
-          backgroundColor: 'rgba(0,0,0,0.15)',
-          color: '#000',
-          fontWeight: '700',
-          fontSize: '2.5ch',
-        }}
-        onClick={() => onItemClick(item.id)}
-        onMouseDown={handleMouseDown}
-        onContextMenu={handleContextMenu}
-      >
-        {item.value}
-      </p>
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+        <p
+          ref={(el) => refCallback(item.id, el)}
+          key={item.id}
+          style={{
+            ...style,
+            padding: '0 4px',
+            width: item.width || 'auto',
+            height: item.height || 'auto',
+            backgroundColor: 'rgba(0,0,0,0.15)',
+            color: '#000',
+            fontWeight: '700',
+            fontSize: '2.5ch',
+          }}
+          onClick={() => onItemClick(item.id)}
+          onMouseDown={handleMouseDown}
+          onContextMenu={handleContextMenu}
+        >
+          {item.value}
+        </p>
+      </div>
     )
   }
 }
