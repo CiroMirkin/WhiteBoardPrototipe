@@ -66,8 +66,9 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({ item, isDragging, onItem
           style={{
             ...style,
             padding: '0 4px',
-            width: item.width || 'auto',
-            height: item.height || 'auto',
+            width: 'auto',
+            height: 'auto',
+            whiteSpace: 'nowrap',
             backgroundColor: 'rgba(0,0,0,0.15)',
             color: '#000',
             fontWeight: '700',

@@ -23,6 +23,9 @@ function AddText(){
                 zIndex: 1,
                 type: 'text',
                 value: text,
+                width: 800,
+                fontSize: 20,
+                
             } as CanvasImage,
         ])
     }
