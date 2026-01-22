@@ -6,7 +6,7 @@ export const useCanvasZooming = (
   panY: number,
   setZoom: (z: number) => void,
   setPan: (x: number, y: number) => void,
-  canvasRef: React.RefObject<HTMLDivElement>
+  canvasRef: React.RefObject<HTMLDivElement | null>
 ) => {
   const handleZoomWheel = useCallback((e: Event) => {
     const wheelEvent = e as WheelEvent

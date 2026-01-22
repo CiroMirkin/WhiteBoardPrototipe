@@ -5,7 +5,7 @@ import { updateItemSize } from '../utils/canvasUtils'
 export const useItemResizing = (
   uploadedFiles: CanvasImage[],
   setUploadedFiles: React.Dispatch<React.SetStateAction<CanvasImage[]>>,
-  itemRefs: React.MutableRefObject<Map<string, HTMLElement>>
+  itemRefs: React.RefObject<Map<string, HTMLElement>>
 ) => {
   const [resizingId, setResizingId] = useState<string | null>(null)
 

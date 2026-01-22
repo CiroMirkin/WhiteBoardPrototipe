@@ -4,7 +4,7 @@ import type { CanvasImage } from '../types'
 export const useItemKeyboardShortcuts = (
   uploadedFiles: CanvasImage[],
   setUploadedFiles: React.Dispatch<React.SetStateAction<CanvasImage[]>>,
-  itemRefs: React.MutableRefObject<Map<string, HTMLElement>>
+  itemRefs: React.RefObject<Map<string, HTMLElement>>
 ) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

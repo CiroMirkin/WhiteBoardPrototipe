@@ -8,8 +8,8 @@ export const useItemDragging = (
   zoom: number,
   panX: number,
   panY: number,
-  canvasRef: React.RefObject<HTMLDivElement>,
-  itemRefs: React.MutableRefObject<Map<string, HTMLElement>>,
+  canvasRef: React.RefObject<HTMLDivElement | null>,
+  itemRefs: React.RefObject<Map<string, HTMLElement>>,
   THROTTLE_MS: number
 ) => {
   const [draggingId, setDraggingId] = useState<string | null>(null)
