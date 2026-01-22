@@ -26,6 +26,12 @@ function App() {
     link.click()
   }
 
+  const handleFullDownload = () => {
+    if (canvasRef.current) {
+      (canvasRef.current as unknown as HTMLElement & { downloadBoard: () => void }).downloadBoard()
+    }
+  }
+
   return (
     <FilesProvider>
       <ZoomProvider>
@@ -35,6 +41,7 @@ function App() {
               <AddText />
               <FileUploader />
               <button onClick={handleDownload}>Instantánea</button>
+              <button onClick={handleFullDownload}>Captura Completa</button>
                 <a href="https://github.com/CiroMirkin/WhiteBoardPrototipe" target="_blank">GitHub</a>
             </header>
           </div>

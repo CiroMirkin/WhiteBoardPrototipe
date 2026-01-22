@@ -14,6 +14,7 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
     const [lastMouseX, setLastMouseX] = useState(0)
     const [lastMouseY, setLastMouseY] = useState(0)
     const localRef = useRef<HTMLDivElement>(null)
+    const innerRef = useRef<HTMLDivElement>(null)
     const itemRefs = useRef(new Map<string, HTMLElement>())
     const dragOffsetRef = useRef({ x: 0, y: 0 })
     const lastUpdateRef = useRef(0)
@@ -202,6 +203,19 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [uploadedFiles, updateItemSize])
 
+    const downloadBoard = async () => {
+        if (!innerRef.current) return
+        const originalTransform = innerRef.current.style.transform
+        innerRef.current.style.transform = 'none'
+        const html2canvas = await import('html2canvas')
+        const canvas = await html2canvas.default(innerRef.current, { useCORS: true })
+        innerRef.current.style.transform = originalTransform
+        const link = document.createElement('a')
+        link.download = 'whiteboard-full.jpg'
+        link.href = canvas.toDataURL('image/jpeg')
+        link.click()
+    }
+
     const handleDelete = (id: string) => {
         setUploadedFiles(prev => prev.filter(img => img.id !== id))
     }
@@ -224,7 +238,7 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
         >
             {(showMenu, closeMenu) => (
                 <div
-                    ref={(el) => { localRef.current = el; if (ref && typeof ref !== 'function') ref.current = el; }}
+                    ref={(el) => { localRef.current = el; if (el) (el as unknown as HTMLElement & { downloadBoard: () => void }).downloadBoard = downloadBoard; if (ref && typeof ref !== 'function') ref.current = el; }}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
@@ -233,6 +247,7 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
                     style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0', cursor: isPanning ? 'grabbing' : draggingId ? 'grabbing' : 'default', userSelect: 'none' }}
                 >
                     <div
+                        ref={innerRef}
                         style={{
                             width: '100%',
                             height: '100%',
