@@ -1,11 +1,11 @@
-import { useRef, useState, useCallback, useEffect } from 'react'
+import { useRef, useState, useCallback, useEffect, forwardRef } from 'react'
 import { useFiles } from './useFiles'
 import type { CanvasImage } from './types'
 import { useZoom } from './Zoom/useZoom'
 import { CanvasItem } from './CanvasItem'
 import { CanvasContextMenu } from './ContextMenu/CanvasContextMenu'
 
-export function Canvas() {
+export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
     const { uploadedFiles, setUploadedFiles } = useFiles()
     const { zoom, setZoom, panX, panY, setPan } = useZoom()
     const [draggingId, setDraggingId] = useState<string | null>(null)
@@ -13,7 +13,7 @@ export function Canvas() {
     const [isPanning, setIsPanning] = useState(false)
     const [lastMouseX, setLastMouseX] = useState(0)
     const [lastMouseY, setLastMouseY] = useState(0)
-    const canvasRef = useRef<HTMLDivElement>(null)
+    const localRef = useRef<HTMLDivElement>(null)
     const itemRefs = useRef(new Map<string, HTMLElement>())
     const dragOffsetRef = useRef({ x: 0, y: 0 })
     const lastUpdateRef = useRef(0)
@@ -49,9 +49,9 @@ export function Canvas() {
 
     const handleItemMouseDown = (id: string, clientX: number, clientY: number) => {
         const item = uploadedFiles.find(img => img.id === id)
-        if (!item || !canvasRef.current) return
+        if (!item || !localRef.current) return
 
-        const rect = canvasRef.current.getBoundingClientRect()
+        const rect = localRef.current.getBoundingClientRect()
         const canvasX = (clientX - rect.left) / zoom - panX
         const canvasY = (clientY - rect.top) / zoom - panY
 
@@ -90,12 +90,12 @@ export function Canvas() {
             setPan(panX + deltaX, panY + deltaY)
             setLastMouseX(e.clientX)
             setLastMouseY(e.clientY)
-        } else if (draggingId && canvasRef.current) {
+        } else if (draggingId && localRef.current) {
             const now = Date.now()
             if (now - lastUpdateRef.current < THROTTLE_MS) return
             lastUpdateRef.current = now
 
-            const rect = canvasRef.current.getBoundingClientRect()
+            const rect = localRef.current.getBoundingClientRect()
             const canvasX = (e.clientX - rect.left) / zoom - panX
             const canvasY = (e.clientY - rect.top) / zoom - panY
 
@@ -124,7 +124,7 @@ export function Canvas() {
     const handleWheel = useCallback((e: Event) => {
         const wheelEvent = e as WheelEvent
         wheelEvent.preventDefault()
-        if (!canvasRef.current) return
+        if (!localRef.current) return
 
         if (resizingId) {
             // Resize the element
@@ -151,7 +151,7 @@ export function Canvas() {
             return
         }
 
-        const rect = canvasRef.current.getBoundingClientRect()
+        const rect = localRef.current.getBoundingClientRect()
         const mouseX = wheelEvent.clientX - rect.left
         const mouseY = wheelEvent.clientY - rect.top
 
@@ -169,7 +169,7 @@ export function Canvas() {
     }, [zoom, panX, panY, setZoom, setPan, resizingId, updateItemSize, uploadedFiles])
 
     useEffect(() => {
-        const canvas = canvasRef.current
+        const canvas = localRef.current
         if (canvas) {
             canvas.addEventListener('wheel', handleWheel, { passive: false })
         }
@@ -217,14 +217,14 @@ export function Canvas() {
     }
 
     return (
-        <CanvasContextMenu 
-            onDelete={handleDelete} 
-            onResize={(id) => setResizingId(id)} 
+        <CanvasContextMenu
+            onDelete={handleDelete}
+            onResize={(id) => setResizingId(id)}
             onClose={(e) => handleOnCloseCanvasContextMenu(e)}
         >
             {(showMenu, closeMenu) => (
                 <div
-                    ref={canvasRef}
+                    ref={(el) => { localRef.current = el; if (ref && typeof ref !== 'function') ref.current = el; }}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
@@ -257,4 +257,4 @@ export function Canvas() {
             )}
         </CanvasContextMenu>
     )
-}
+})
