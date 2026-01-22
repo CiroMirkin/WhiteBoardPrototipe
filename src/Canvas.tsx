@@ -1,37 +1,31 @@
-import { useRef, useState, useCallback, useEffect, forwardRef } from 'react'
+import { useRef, useCallback, useEffect, forwardRef } from 'react'
 import { useFiles } from './useFiles'
 import type { CanvasImage } from './types'
 import { useZoom } from './Zoom/useZoom'
 import { CanvasItem } from './CanvasItem'
 import { CanvasContextMenu } from './ContextMenu/CanvasContextMenu'
+import { useItemDragging } from './hooks/useItemDragging'
+import { useCanvasPanning } from './hooks/useCanvasPanning'
+import { useItemResizing } from './hooks/useItemResizing'
+import { useCanvasZooming } from './hooks/useCanvasZooming'
+import { useItemKeyboardShortcuts } from './hooks/useItemKeyboardShortcuts'
+
 
 export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
     const { uploadedFiles, setUploadedFiles } = useFiles()
     const { zoom, setZoom, panX, panY, setPan } = useZoom()
-    const [draggingId, setDraggingId] = useState<string | null>(null)
-    const [resizingId, setResizingId] = useState<string | null>(null)
-    const [isPanning, setIsPanning] = useState(false)
-    const [lastMouseX, setLastMouseX] = useState(0)
-    const [lastMouseY, setLastMouseY] = useState(0)
     const localRef = useRef<HTMLDivElement>(null)
     const innerRef = useRef<HTMLDivElement>(null)
     const itemRefs = useRef(new Map<string, HTMLElement>())
-    const dragOffsetRef = useRef({ x: 0, y: 0 })
-    const lastUpdateRef = useRef(0)
     const THROTTLE_MS = 8 // ~120fps
-    const currentDragPosition = useRef({ x: 0, y: 0 })
 
-    const updateItemPosition = useCallback((id: string, x: number, y: number) => {
-        setUploadedFiles(prev =>
-            prev.map(img => img.id === id ? { ...img, x, y } : img)
-        )
-    }, [setUploadedFiles])
-
-    const updateItemSize = useCallback((id: string, width: number, height: number, fontSize?: number) => {
-        setUploadedFiles(prev =>
-            prev.map(img => img.id === id ? { ...img, width, height, ...(fontSize !== undefined ? { fontSize } : {}) } : img)
-        )
-    }, [setUploadedFiles])
+    const { draggingId, handleItemMouseDown, handleDragMouseMove, handleDragMouseUp } = useItemDragging(
+        uploadedFiles, setUploadedFiles, zoom, panX, panY, localRef, itemRefs, THROTTLE_MS
+    )
+    const { isPanning, handlePanMouseDown, handlePanMouseMove, handlePanMouseUp } = useCanvasPanning(zoom, panX, panY, setPan)
+    const { resizingId, setResizingId, handleResizeWheel } = useItemResizing(uploadedFiles, setUploadedFiles, itemRefs)
+    const { handleZoomWheel } = useCanvasZooming(zoom, panX, panY, setZoom, setPan, localRef)
+    useItemKeyboardShortcuts(uploadedFiles, setUploadedFiles, itemRefs)
 
     const refCallback = useCallback((id: string, el: HTMLElement | null) => {
         if (el) {
@@ -48,126 +42,27 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
         )
     }
 
-    const handleItemMouseDown = (id: string, clientX: number, clientY: number) => {
-        const item = uploadedFiles.find(img => img.id === id)
-        if (!item || !localRef.current) return
-
-        const rect = localRef.current.getBoundingClientRect()
-        const canvasX = (clientX - rect.left) / zoom - panX
-        const canvasY = (clientY - rect.top) / zoom - panY
-
-        dragOffsetRef.current = {
-            x: canvasX - item.x,
-            y: canvasY - item.y
-        }
-
-        currentDragPosition.current = { x: item.x, y: item.y }
-
-        setDraggingId(id)
-        setUploadedFiles(prev =>
-            prev.map(img => (img.id === id ? { ...img, zIndex: 1 } : { ...img, zIndex: 0 }))
-        )
-
-        const element = itemRefs.current.get(id)
-        if (element) {
-            element.style.transform = `translate(${item.x}px, ${item.y}px) scale(1.05)`
-            element.style.willChange = 'transform'
-        }
-    }
-
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if (e.button === 1) { // Middle mouse button
-            setIsPanning(true)
-            setLastMouseX(e.clientX)
-            setLastMouseY(e.clientY)
-            e.preventDefault()
-        }
-    }
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        handlePanMouseDown(e)
+    }, [handlePanMouseDown])
 
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
-        if (isPanning) {
-            const deltaX = (e.clientX - lastMouseX) / zoom
-            const deltaY = (e.clientY - lastMouseY) / zoom
-            setPan(panX + deltaX, panY + deltaY)
-            setLastMouseX(e.clientX)
-            setLastMouseY(e.clientY)
-        } else if (draggingId && localRef.current) {
-            const now = Date.now()
-            if (now - lastUpdateRef.current < THROTTLE_MS) return
-            lastUpdateRef.current = now
-
-            const rect = localRef.current.getBoundingClientRect()
-            const canvasX = (e.clientX - rect.left) / zoom - panX
-            const canvasY = (e.clientY - rect.top) / zoom - panY
-
-            const newX = canvasX - dragOffsetRef.current.x
-            const newY = canvasY - dragOffsetRef.current.y
-
-            currentDragPosition.current = { x: newX, y: newY }
-
-            const element = itemRefs.current.get(draggingId)
-            if (element) {
-                element.style.transform = `translate(${newX}px, ${newY}px) scale(1.05)`
-            }
-        }
-    }, [isPanning, draggingId, lastMouseX, lastMouseY, zoom, panX, panY, setPan])
+        handlePanMouseMove(e)
+        handleDragMouseMove(e)
+    }, [handlePanMouseMove, handleDragMouseMove])
 
     const handleMouseUp = useCallback((e: React.MouseEvent) => {
-        if (e.button === 1) {
-            setIsPanning(false)
-        }
-        if (draggingId) {
-            updateItemPosition(draggingId, currentDragPosition.current.x, currentDragPosition.current.y)
-            setDraggingId(null)
-        }
-    }, [draggingId, updateItemPosition])
+        handlePanMouseUp(e)
+        handleDragMouseUp()
+    }, [handlePanMouseUp, handleDragMouseUp])
 
     const handleWheel = useCallback((e: Event) => {
-        const wheelEvent = e as WheelEvent
-        wheelEvent.preventDefault()
-        if (!localRef.current) return
-
         if (resizingId) {
-            // Resize the element
-            const item = uploadedFiles.find(f => f.id === resizingId)
-            if (item) {
-                const scale = wheelEvent.deltaY > 0 ? 0.9 : 1.1
-                if (item.type === 'text') {
-                    const currentFontSize = item.fontSize || 20
-                    const newFontSize = Math.max(10, currentFontSize * scale)
-                    const newWidth = item.width ? Math.max(20, item.width * scale) : 0
-                    const newHeight = item.height ? Math.max(20, item.height * scale) : 0
-                    updateItemSize(resizingId, newWidth, newHeight, newFontSize)
-                } else {
-                    const element = itemRefs.current.get(resizingId)
-                    if (element) {
-                        const currentWidth = element.offsetWidth
-                        const currentHeight = element.offsetHeight
-                        const newWidth = Math.max(20, currentWidth * scale)
-                        const newHeight = Math.max(20, currentHeight * scale)
-                        updateItemSize(resizingId, newWidth, newHeight)
-                    }
-                }
-            }
-            return
+            handleResizeWheel(e as WheelEvent)
+        } else {
+            handleZoomWheel(e)
         }
-
-        const rect = localRef.current.getBoundingClientRect()
-        const mouseX = wheelEvent.clientX - rect.left
-        const mouseY = wheelEvent.clientY - rect.top
-
-        const canvasMouseX = mouseX / zoom - panX
-        const canvasMouseY = mouseY / zoom - panY
-
-        const zoomFactor = wheelEvent.deltaY > 0 ? 0.9 : 1.1
-        const newZoom = Math.max(0.1, Math.min(5, zoom * zoomFactor))
-
-        const newPanX = mouseX / newZoom - canvasMouseX
-        const newPanY = mouseY / newZoom - canvasMouseY
-
-        setZoom(newZoom)
-        setPan(newPanX, newPanY)
-    }, [zoom, panX, panY, setZoom, setPan, resizingId, updateItemSize, uploadedFiles])
+    }, [resizingId, handleResizeWheel, handleZoomWheel])
 
     useEffect(() => {
         const canvas = localRef.current
@@ -181,27 +76,7 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
         }
     }, [handleWheel])
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.ctrlKey && (e.key === '+' || e.key === '=' || e.key === '-')) {
-                e.preventDefault()
-                const selected = uploadedFiles.find(f => f.zIndex === 1)
-                if (selected) {
-                    const element = itemRefs.current.get(selected.id)
-                    if (element) {
-                        const currentWidth = element.offsetWidth
-                        const currentHeight = element.offsetHeight
-                        const scale = (e.key === '+' || e.key === '=') ? 1.1 : 0.9
-                        const newWidth = Math.max(20, currentWidth * scale)
-                        const newHeight = Math.max(20, currentHeight * scale)
-                        updateItemSize(selected.id, newWidth, newHeight)
-                    }
-                }
-            }
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [uploadedFiles, updateItemSize])
+
 
     const downloadBoard = async () => {
         if (!localRef.current || !innerRef.current) return
