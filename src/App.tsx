@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { registerPlugin } from 'react-filepond'
 import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
@@ -14,6 +15,17 @@ import { ZoomProvider } from './Zoom/ZoomContext'
 registerPlugin(FilePondPluginImagePreview, FilePondPluginImageExifOrientation)
 
 function App() {
+  const canvasRef = useRef<HTMLDivElement>(null)
+
+  const handleDownload = async () => {
+    const html2canvas = await import('html2canvas')
+    const canvas = await html2canvas.default(canvasRef.current!, { useCORS: true })
+    const link = document.createElement('a')
+    link.download = 'whiteboard.jpg'
+    link.href = canvas.toDataURL('image/jpeg')
+    link.click()
+  }
+
   return (
     <FilesProvider>
       <ZoomProvider>
@@ -22,11 +34,12 @@ function App() {
             <header style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', margin: '.5rem 6rem' }}>
               <AddText />
               <FileUploader />
-               <a href="https://github.com/CiroMirkin/WhiteBoardPrototipe" target="_blank">GitHub</a>
+              <button onClick={handleDownload}>Instantánea</button>
+                <a href="https://github.com/CiroMirkin/WhiteBoardPrototipe" target="_blank">GitHub</a>
             </header>
           </div>
           <ZoomContainer>
-            <Canvas />
+            <Canvas ref={canvasRef} />
           </ZoomContainer>
         </div>
       </ZoomProvider>
