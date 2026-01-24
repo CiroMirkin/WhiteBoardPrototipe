@@ -20,7 +20,7 @@ function App() {
 
   const handleDownload = async () => {
     const html2canvas = await import('html2canvas')
-    const canvas = await html2canvas.default(canvasRef.current!, { useCORS: true, scale: 4 })
+    const canvas = await html2canvas.default(canvasRef.current!, { useCORS: true, scale: 3 })
     const link = document.createElement('a')
     link.download = 'whiteboard.png'
     link.href = canvas.toDataURL('image/png')
