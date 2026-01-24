@@ -110,7 +110,7 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
         localRef.current.style.height = `${height}px`
         innerRef.current.style.transform = 'none'
         const html2canvas = await import('html2canvas')
-        const canvas = await html2canvas.default(localRef.current, { useCORS: true })
+        const canvas = await html2canvas.default(localRef.current, { useCORS: true, scale: 4 })
         // Restore
         localRef.current.style.width = originalWidth
         localRef.current.style.height = originalHeight
@@ -122,8 +122,8 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
             }
         })
         const link = document.createElement('a')
-        link.download = 'whiteboard-full.jpg'
-        link.href = canvas.toDataURL('image/jpeg')
+        link.download = 'whiteboard-full.png'
+        link.href = canvas.toDataURL('image/png')
         link.click()
     }
 
