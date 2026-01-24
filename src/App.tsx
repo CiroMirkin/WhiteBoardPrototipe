@@ -11,6 +11,7 @@ import { Canvas } from './Canvas'
 import AddText from './AddText'
 import { ZoomContainer } from './Zoom/ZoomContainer'
 import { ZoomProvider } from './Zoom/ZoomContext'
+import CleanBoardBtn from './CleanBoardBtn'
 
 registerPlugin(FilePondPluginImagePreview, FilePondPluginImageExifOrientation)
 
@@ -42,6 +43,7 @@ function App() {
               <FileUploader />
               <button onClick={handleDownload}>Instantánea</button>
               <button onClick={handleFullDownload}>Captura Completa</button>
+              <CleanBoardBtn />
                 <a href="https://github.com/CiroMirkin/WhiteBoardPrototipe" target="_blank">GitHub</a>
             </header>
           </div>
