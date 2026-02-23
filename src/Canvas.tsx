@@ -23,7 +23,7 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
         uploadedFiles, setUploadedFiles, zoom, panX, panY, localRef, itemRefs, THROTTLE_MS
     )
     const { isPanning, handlePanMouseDown, handlePanMouseMove, handlePanMouseUp } = useCanvasPanning(zoom, panX, panY, setPan)
-    const { resizingId, setResizingId, handleResizeWheel } = useItemResizing(uploadedFiles, setUploadedFiles, itemRefs)
+    const { resizingId, setResizingId, handleResizeWheel, handleResizeStart } = useItemResizing(uploadedFiles, setUploadedFiles, itemRefs, zoom, panX)
     const { handleZoomWheel } = useCanvasZooming(zoom, panX, panY, setZoom, setPan, localRef)
     useItemKeyboardShortcuts(uploadedFiles, setUploadedFiles, itemRefs)
 
@@ -184,10 +184,12 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
                                 key={file.id}
                                 item={file}
                                 isDragging={draggingId === file.id}
+                                isResizing={resizingId === file.id}
                                 onItemClick={handleImageClick}
                                 onItemMouseDown={handleItemMouseDown}
                                 onContextMenu={showMenu}
                                 refCallback={refCallback}
+                                onResizeStart={(position, e) => handleResizeStart(file.id, position, e.clientX, e.clientY)}
                             />
                         ))}
                     </div>
