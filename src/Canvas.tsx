@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, forwardRef } from 'react'
+import { forwardRef, useRef, useCallback, useEffect } from 'react'
 import { useFiles } from './useFiles'
 import type { CanvasImage } from './types'
 import { useZoom } from './Zoom/useZoom'
@@ -23,7 +23,7 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
         uploadedFiles, setUploadedFiles, zoom, panX, panY, localRef, itemRefs, THROTTLE_MS
     )
     const { isPanning, handlePanMouseDown, handlePanMouseMove, handlePanMouseUp } = useCanvasPanning(zoom, panX, panY, setPan)
-    const { resizingId, setResizingId, handleResizeWheel } = useItemResizing(uploadedFiles, setUploadedFiles, itemRefs)
+    const { resizingId, setResizingId, handleResizeWheel, handleResizeStart } = useItemResizing(uploadedFiles, setUploadedFiles, itemRefs, zoom, panX)
     const { handleZoomWheel } = useCanvasZooming(zoom, panX, panY, setZoom, setPan, localRef)
     useItemKeyboardShortcuts(uploadedFiles, setUploadedFiles, itemRefs)
 
@@ -40,6 +40,16 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
         setUploadedFiles(prev =>
             prev.map(img => (img.id === id ? { ...img, zIndex: 1 } : { ...img, zIndex: 0 }))
         )
+    }
+
+    const handleDownload = (id: string) => {
+        const item = uploadedFiles.find(f => f.id === id)
+        if (item && item.src) {
+            const link = document.createElement('a')
+            link.href = item.src
+            link.download = `item-${id}.png`
+            link.click()
+        }
     }
 
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -110,7 +120,7 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
         localRef.current.style.height = `${height}px`
         innerRef.current.style.transform = 'none'
         const html2canvas = await import('html2canvas')
-        const canvas = await html2canvas.default(localRef.current, { useCORS: true, scale: 4 })
+        const canvas = await html2canvas.default(localRef.current, { useCORS: true, scale: 3 })
         // Restore
         localRef.current.style.width = originalWidth
         localRef.current.style.height = originalHeight
@@ -131,7 +141,7 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
         setUploadedFiles(prev => prev.filter(img => img.id !== id))
     }
 
-    const handleOnCloseCanvasContextMenu = (e?: React.MouseEvent) => { 
+    const handleContextMenuClose = (e?: React.MouseEvent) => {
         if (resizingId && e) { 
             const target = e.target as HTMLElement
             const resizingEl = itemRefs.current.get(resizingId)
@@ -145,7 +155,9 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
         <CanvasContextMenu
             onDelete={handleDelete}
             onResize={(id) => setResizingId(id)}
-            onClose={(e) => handleOnCloseCanvasContextMenu(e)}
+            onClose={handleContextMenuClose}
+            onDownload={handleDownload}
+            isImageFn={(id) => !!uploadedFiles.find(f => f.id === id)?.src}
         >
             {(showMenu, closeMenu) => (
                 <div
@@ -172,10 +184,12 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
                                 key={file.id}
                                 item={file}
                                 isDragging={draggingId === file.id}
+                                isResizing={resizingId === file.id}
                                 onItemClick={handleImageClick}
                                 onItemMouseDown={handleItemMouseDown}
                                 onContextMenu={showMenu}
                                 refCallback={refCallback}
+                                onResizeStart={(position, e) => handleResizeStart(file.id, position, e.clientX, e.clientY)}
                             />
                         ))}
                     </div>
