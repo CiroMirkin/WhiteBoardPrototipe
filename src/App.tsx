@@ -6,12 +6,10 @@ import 'filepond/dist/filepond.min.css'
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css'
 
 import { FilesProvider } from './FilesProvider'
-import { FileUploader } from './FileUploader'
 import { Canvas } from './Canvas'
-import AddText from './AddText'
 import { ZoomContainer } from './Zoom/ZoomContainer'
 import { ZoomProvider } from './Zoom/ZoomContext'
-import CleanBoardBtn from './CleanBoardBtn'
+import { Header } from './components/Header'
 
 registerPlugin(FilePondPluginImagePreview, FilePondPluginImageExifOrientation)
 
@@ -37,16 +35,10 @@ function App() {
     <FilesProvider>
       <ZoomProvider>
         <div style={{ position: 'relative' }}>
-          <div style={{ position: 'absolute', width: '100%', zIndex: 20, pointerEvents: 'none' }}>
-            <header style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', margin: '.5rem 6rem' }}>
-              <AddText />
-              <FileUploader />
-              <button onClick={handleDownload}>Instantánea</button>
-              <button onClick={handleFullDownload}>Captura Completa</button>
-              <CleanBoardBtn />
-                <a href="https://github.com/CiroMirkin/WhiteBoardPrototipe" target="_blank">GitHub</a>
-            </header>
-          </div>
+          <Header 
+            onDownload={handleDownload}
+            onFullDownload={handleFullDownload}
+          />
           <ZoomContainer>
             <Canvas ref={canvasRef} />
           </ZoomContainer>
