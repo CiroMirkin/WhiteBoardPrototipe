@@ -1,5 +1,6 @@
 import { Point } from './Point'
 import { Rectangle } from './Rectangle'
+import type { CanvasImage } from '../types'
 
 export interface CoordinateTransform {
   zoom: number
@@ -79,5 +80,30 @@ export const CoordinateUtils = {
     const panY = (screenSize.y / 2 - rectCenter.y * zoom) / zoom
     
     return { zoom: Math.max(0.1, zoom), panX, panY }
+  },
+
+  getCommonBounds: (elements: CanvasImage[]): Rectangle => {
+    if (!elements.length) return Rectangle.empty()
+
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+
+    elements.forEach(el => {
+      const width = el.width || 0
+      const height = el.height || 0
+      minX = Math.min(minX, el.x)
+      minY = Math.min(minY, el.y)
+      maxX = Math.max(maxX, el.x + width)
+      maxY = Math.max(maxY, el.y + height)
+    })
+
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY
+    }
   }
 }
