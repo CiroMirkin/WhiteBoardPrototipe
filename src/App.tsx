@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { registerPlugin } from 'react-filepond'
 import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
@@ -15,6 +15,24 @@ registerPlugin(FilePondPluginImagePreview, FilePondPluginImageExifOrientation)
 
 function App() {
   const canvasRef = useRef<HTMLDivElement>(null)
+  const [activeTool, setActiveTool] = useState<'text' | 'image' | 'arrow'>('arrow')
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target as HTMLElement).isContentEditable) {
+        return
+      }
+      
+      if (e.key.toLowerCase() === 't') {
+        setActiveTool('text')
+      } else if (e.key.toLowerCase() === 'a') {
+        setActiveTool('arrow')
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const handleDownload = async () => {
     const html2canvas = await import('html2canvas')
@@ -38,9 +56,11 @@ function App() {
           <Header 
             onDownload={handleDownload}
             onFullDownload={handleFullDownload}
+            activeTool={activeTool}
+            onToolChange={setActiveTool}
           />
           <ZoomContainer>
-            <Canvas ref={canvasRef} />
+            <Canvas ref={canvasRef} activeTool={activeTool} />
           </ZoomContainer>
         </div>
       </ZoomProvider>
