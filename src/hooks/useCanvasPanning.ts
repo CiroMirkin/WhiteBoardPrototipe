@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 export const useCanvasPanning = (
   zoom: number,
@@ -7,26 +7,37 @@ export const useCanvasPanning = (
   setPan: (x: number, y: number) => void
 ) => {
   const [isPanning, setIsPanning] = useState(false)
-  const [lastMouseX, setLastMouseX] = useState(0)
-  const [lastMouseY, setLastMouseY] = useState(0)
+  const lastMouseX = useRef(0)
+  const lastMouseY = useRef(0)
+  const setPanRef = useRef(setPan)
+  const zoomRef = useRef(zoom)
+
+  setPanRef.current = setPan
+  zoomRef.current = zoom
+
+  useEffect(() => {
+    zoomRef.current = zoom
+  }, [zoom])
 
   const handlePanMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && (e.ctrlKey || e.metaKey))) { // Middle mouse button or Ctrl+Left Click
+    if (e.button === 1 || (e.button === 0 && (e.ctrlKey || e.metaKey))) {
       setIsPanning(true)
-      setLastMouseX(e.clientX)
-      setLastMouseY(e.clientY)
+      lastMouseX.current = e.clientX
+      lastMouseY.current = e.clientY
       e.preventDefault()
     }
   }, [])
 
   const handlePanMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isPanning) return
-    const deltaX = (e.clientX - lastMouseX) / zoom
-    const deltaY = (e.clientY - lastMouseY) / zoom
-    setPan(panX + deltaX, panY + deltaY)
-    setLastMouseX(e.clientX)
-    setLastMouseY(e.clientY)
-  }, [isPanning, lastMouseX, lastMouseY, zoom, panX, panY, setPan])
+
+    const currentZoom = zoomRef.current
+    const deltaX = (e.clientX - lastMouseX.current) * 1.5 / Math.sqrt(currentZoom)
+    const deltaY = (e.clientY - lastMouseY.current) * 1.5 / Math.sqrt(currentZoom)
+    setPanRef.current(panX + deltaX, panY + deltaY)
+    lastMouseX.current = e.clientX
+    lastMouseY.current = e.clientY
+  }, [isPanning, panX, panY])
 
   const handlePanMouseUp = useCallback((e: React.MouseEvent) => {
     if (e.button === 1 || (e.button === 0 && (e.ctrlKey || e.metaKey))) {

@@ -281,7 +281,6 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
                         className="canvas"
                         style={{
                             transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
-                            transition: isPanning ? 'none' : 'transform 0.2s ease-out',
                         }}
                     >
                         <svg 
