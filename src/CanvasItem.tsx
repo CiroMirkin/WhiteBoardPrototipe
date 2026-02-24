@@ -59,31 +59,51 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({
   const height = item.height || 100
 
   if (item.type !== 'text') {
+    const imgWidth = width
+    const imgHeight = height
+    
+    let cropClipPath = 'none'
+    let cropOffsetX = 0
+    let cropOffsetY = 0
+    let cropWidth = imgWidth
+    let cropHeight = imgHeight
+    if (item.crop && item.crop.naturalWidth && item.crop.naturalHeight) {
+      const scaleX = imgWidth / item.crop.naturalWidth
+      const scaleY = imgHeight / item.crop.naturalHeight
+      cropOffsetX = item.crop.x * scaleX
+      cropOffsetY = item.crop.y * scaleY
+      cropWidth = item.crop.width * scaleX
+      cropHeight = item.crop.height * scaleY
+      cropClipPath = `inset(${cropOffsetY}px ${imgWidth - cropOffsetX - cropWidth}px ${imgHeight - cropOffsetY - cropHeight}px ${cropOffsetX}px)`
+    }
+
     return (
       <div className="canvas-item-wrapper">
         <div
           ref={(el) => refCallback(item.id, el)}
           className={`canvas-item ${isDragging ? 'dragging' : ''}`}
           onClick={() => onItemClick(item.id)}
-          onMouseDown={handleMouseDown}
           onContextMenu={handleContextMenu}
           style={{
             ...style,
-            width,
-            height: item.height || 'auto',
+            width: imgWidth,
+            height: imgHeight,
             filter: isDragging ? 'drop-shadow(0 12px 24px rgba(0,0,0,0.45))' : 'drop-shadow(0 6px 12px rgba(0, 0, 0, 0))',
+            clipPath: cropClipPath,
           }}
+          onMouseDown={handleMouseDown}
         >
           <img
             src={item.src}
             alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'fill', pointerEvents: 'none' }}
           />
           {isResizing && (
             <ResizeHandles
-              x={0}
-              y={0}
-              width={width}
-              height={height}
+              x={cropOffsetX}
+              y={cropOffsetY}
+              width={cropWidth}
+              height={cropHeight}
               onResizeStart={handleResizeStart}
             />
           )}

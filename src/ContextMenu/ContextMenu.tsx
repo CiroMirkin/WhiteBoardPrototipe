@@ -6,12 +6,13 @@ interface ContextMenuProps {
   onDelete: () => void
   onResize: () => void
   onDownload?: () => void
+  onCrop?: () => void
   isImage: boolean
   onClose: () => void
   showResize?: boolean
 }
 
-export const ContextMenu = ({ x, y, onDelete, onResize, onDownload, isImage, onClose, showResize = true }: ContextMenuProps) => {
+export const ContextMenu = ({ x, y, onDelete, onResize, onDownload, onCrop, isImage, onClose, showResize = true }: ContextMenuProps) => {
   const handleDelete = () => {
     const confirmDelete = window.confirm('¿Estás seguro de que quieres eliminar este elemento?')
     
@@ -31,6 +32,11 @@ export const ContextMenu = ({ x, y, onDelete, onResize, onDownload, isImage, onC
       {showResize && (
         <button className="context-menu__button" onClick={onResize}>
           Redimensionar
+        </button>
+      )}
+      {isImage && onCrop && (
+        <button className="context-menu__button" onClick={onCrop}>
+          Recortar
         </button>
       )}
       {isImage && onDownload && (
