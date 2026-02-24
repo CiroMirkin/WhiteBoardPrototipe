@@ -1,6 +1,7 @@
 import React from 'react'
 import type { CanvasImage } from './types'
 import { ResizeHandles, type HandlePosition } from './components/ResizeHandles'
+import './styles/canvasItem.css'
 
 interface CanvasItemProps {
   item: CanvasImage
@@ -59,9 +60,10 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({
 
   if (item.type !== 'text') {
     return (
-      <div style={{ position: 'relative', display: 'inline-block' }}>
+      <div className="canvas-item-wrapper">
         <div
           ref={(el) => refCallback(item.id, el)}
+          className={`canvas-item ${isDragging ? 'dragging' : ''}`}
           onClick={() => onItemClick(item.id)}
           onMouseDown={handleMouseDown}
           onContextMenu={handleContextMenu}
@@ -74,7 +76,7 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({
         >
           <img
             src={item.src}
-            style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }}
+            alt=""
           />
           {isResizing && (
             <ResizeHandles
@@ -93,9 +95,10 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({
     const textHeight = item.height || 40
     
     return (
-      <div style={{ position: 'relative', display: 'inline-block' }}>
+      <div className="canvas-item-wrapper">
         <p
           ref={(el) => refCallback(item.id, el)}
+          className={`canvas-item canvas-text ${isDragging ? 'dragging' : ''}`}
           onClick={() => onItemClick(item.id)}
           onMouseDown={handleMouseDown}
           onContextMenu={handleContextMenu}
