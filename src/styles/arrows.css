@@ -1,0 +1,44 @@
+/* Estilos para flechas SVG en el canvas */
+.canvas-arrow {
+  stroke: var(--color-zinc-600);
+  stroke-width: 4;
+  marker-end: url(#arrowhead);
+  pointer-events: stroke;
+  cursor: pointer;
+  transition: stroke var(--transition-fast);
+}
+
+.canvas-arrow:hover {
+  stroke: var(--color-zinc-700);
+}
+
+.canvas-arrow.selected {
+  stroke: var(--color-blue-500);
+  marker-end: url(#arrowhead-selected);
+  outline: none;
+}
+
+/* Definiciones de markers SVG */
+#arrowhead {
+  marker-width: 10;
+  marker-height: 7;
+  ref-x: 9;
+  ref-y: 3.5;
+  orient: auto;
+}
+
+#arrowhead polygon {
+  fill: var(--color-red-600);
+}
+
+#arrowhead-selected {
+  marker-width: 10;
+  marker-height: 7;
+  ref-x: 9;
+  ref-y: 3.5;
+  orient: auto;
+}
+
+#arrowhead-selected polygon {
+  fill: var(--color-blue-500);
+}
