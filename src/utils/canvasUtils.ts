@@ -25,3 +25,7 @@ export const updateItemSize = (setUploadedFiles: React.Dispatch<React.SetStateAc
 export const updateItemPositionAndSize = (setUploadedFiles: React.Dispatch<React.SetStateAction<CanvasImage[]>>, id: string, x: number, y: number, width: number, height: number, fontSize?: number) => {
   setUploadedFiles(prev => prev.map(img => img.id === id ? { ...img, x, y, width, height, ...(fontSize !== undefined ? { fontSize } : {}) } : img))
 }
+
+export const updateItemCrop = (setUploadedFiles: React.Dispatch<React.SetStateAction<CanvasImage[]>>, id: string, crop: { x: number; y: number; width: number; height: number; naturalWidth: number; naturalHeight: number }) => {
+  setUploadedFiles(prev => prev.map(img => img.id === id ? { ...img, crop } : img))
+}

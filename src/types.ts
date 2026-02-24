@@ -9,6 +9,14 @@ export interface CanvasImage {
     width?: number
     height?: number
     fontSize?: number
+    crop?: {
+        x: number
+        y: number
+        width: number
+        height: number
+        naturalWidth?: number
+        naturalHeight?: number
+    }
 }
 
 export interface Arrow {
