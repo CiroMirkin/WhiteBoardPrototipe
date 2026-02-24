@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { CanvasImage } from '../types'
-import { updateItemSize, updateItemPositionAndSize } from '../utils/canvasUtils'
+import { updateItemPositionAndSize } from '../utils/canvasUtils'
 import type { HandlePosition } from '../components/ResizeHandles'
 
 interface ResizeDragState {
@@ -11,6 +11,7 @@ interface ResizeDragState {
   startHeight: number
   startItemX: number
   startItemY: number
+  startFontSize?: number
 }
 
 export const useItemResizing = (
@@ -29,21 +30,13 @@ export const useItemResizing = (
     if (!item) return
 
     const scale = wheelEvent.deltaY > 0 ? 0.9 : 1.1
-    if (item.type === 'text') {
-      const currentFontSize = item.fontSize || 20
-      const newFontSize = Math.max(10, currentFontSize * scale)
-      const newWidth = item.width ? Math.max(20, item.width * scale) : 0
-      const newHeight = item.height ? Math.max(20, item.height * scale) : 0
-      updateItemSize(setUploadedFiles, resizingId, newWidth, newHeight, newFontSize)
-    } else {
-      const element = itemRefs.current.get(resizingId)
-      if (element) {
-        const currentWidth = element.offsetWidth
-        const currentHeight = element.offsetHeight
-        const newWidth = Math.max(20, currentWidth * scale)
-        const newHeight = Math.max(20, currentHeight * scale)
-        updateItemSize(setUploadedFiles, resizingId, newWidth, newHeight)
-      }
+    const element = itemRefs.current.get(resizingId)
+    if (element) {
+      const currentWidth = element.offsetWidth
+      const currentHeight = element.offsetHeight
+      const newWidth = Math.max(20, currentWidth * scale)
+      const newHeight = Math.max(20, currentHeight * scale)
+      updateItemPositionAndSize(setUploadedFiles, resizingId, item.x, item.y, newWidth, newHeight)
     }
   }, [resizingId, uploadedFiles, setUploadedFiles, itemRefs])
 
@@ -51,17 +44,27 @@ export const useItemResizing = (
     const item = uploadedFiles.find(f => f.id === id)
     if (!item) return
 
+    const element = itemRefs.current.get(id)
+    let startWidth = item.width || 200
+    let startHeight = item.height || 100
+
+    if (element) {
+      startWidth = element.offsetWidth || startWidth
+      startHeight = element.offsetHeight || startHeight
+    }
+
     setResizingId(id)
     resizeDragRef.current = {
       position,
       startX: clientX,
       startY: clientY,
-      startWidth: item.width || 200,
-      startHeight: item.height || 100,
+      startWidth,
+      startHeight,
       startItemX: item.x,
       startItemY: item.y,
+      startFontSize: item.type === 'text' ? (item.fontSize || 20) : undefined,
     }
-  }, [uploadedFiles])
+  }, [uploadedFiles, itemRefs])
 
   const handleResizeMouseMove = useCallback((clientX: number) => {
     if (!resizingId || !resizeDragRef.current) return
@@ -69,7 +72,7 @@ export const useItemResizing = (
     const item = uploadedFiles.find(f => f.id === resizingId)
     if (!item) return
 
-    const { position, startX, startWidth, startHeight, startItemX, startItemY } = resizeDragRef.current
+    const { position, startX, startWidth, startHeight, startItemX, startItemY, startFontSize } = resizeDragRef.current
     
     const canvasStartX = startX / zoom - panX
     const canvasClientX = clientX / zoom - panX
@@ -105,7 +108,13 @@ export const useItemResizing = (
         break
     }
 
-    updateItemPositionAndSize(setUploadedFiles, resizingId, newX, newY, newWidth, newHeight)
+    let newFontSize: number | undefined
+    if (item.type === 'text' && startFontSize) {
+      const widthScale = newWidth / startWidth
+      newFontSize = Math.max(10, startFontSize * widthScale)
+    }
+
+    updateItemPositionAndSize(setUploadedFiles, resizingId, newX, newY, newWidth, newHeight, newFontSize)
   }, [resizingId, uploadedFiles, setUploadedFiles, zoom, panX])
 
   const handleResizeMouseUp = useCallback(() => {
