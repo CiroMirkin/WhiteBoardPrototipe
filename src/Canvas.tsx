@@ -1,4 +1,4 @@
-import { forwardRef, useRef, useCallback, useEffect } from 'react'
+import { forwardRef, useRef, useCallback, useEffect, useState, lazy, Suspense } from 'react'
 import { useFiles } from './useFiles'
 import type { CanvasImage } from './types'
 import { useZoom } from './Zoom/useZoom'
@@ -11,6 +11,9 @@ import { useCanvasZooming } from './hooks/useCanvasZooming'
 import { useItemKeyboardShortcuts } from './hooks/useItemKeyboardShortcuts'
 import { useArrowDrawing } from './hooks/useArrowDrawing'
 import { ArrowItem } from './components/ArrowItem'
+import { updateItemCrop } from './utils/canvasUtils'
+
+const CropOverlay = lazy(() => import('./components/CropOverlay').then(module => ({ default: module.CropOverlay })))
 
 interface CanvasProps {
     activeTool?: 'select' | 'text' | 'image' | 'arrow'
@@ -24,6 +27,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
     const innerRef = useRef<HTMLDivElement>(null)
     const itemRefs = useRef(new Map<string, HTMLElement>())
     const THROTTLE_MS = 8 // ~120fps
+    const [croppingItem, setCroppingItem] = useState<CanvasImage | null>(null)
 
     const { draggingId, handleItemMouseDown, handleDragMouseMove, handleDragMouseUp } = useItemDragging(
         uploadedFiles, setUploadedFiles, zoom, panX, panY, localRef, itemRefs, THROTTLE_MS
@@ -221,6 +225,24 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
         }
     }
 
+    const handleCrop = (id: string) => {
+        const item = uploadedFiles.find(img => img.id === id)
+        if (item) {
+            setCroppingItem(item)
+        }
+    }
+
+    const handleCropApply = (crop: { x: number; y: number; width: number; height: number; naturalWidth: number; naturalHeight: number }) => {
+        if (croppingItem) {
+            updateItemCrop(setUploadedFiles, croppingItem.id, crop)
+            setCroppingItem(null)
+        }
+    }
+
+    const handleCropClose = () => {
+        setCroppingItem(null)
+    }
+
     const handleContextMenuClose = (e?: React.MouseEvent) => {
         if (resizingId && e) { 
             const target = e.target as HTMLElement
@@ -232,11 +254,13 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
     }
 
     return (
+        <>
         <CanvasContextMenu
             onDelete={handleDelete}
             onResize={(id) => setResizingId(id)}
             onClose={handleContextMenuClose}
             onDownload={handleDownload}
+            onCrop={handleCrop}
             isImageFn={(id) => !!uploadedFiles.find(f => f.id === id)?.src}
             isArrowFn={(id) => arrows.some(a => a.id === id)}
         >
@@ -318,5 +342,18 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
                 </div>
             )}
         </CanvasContextMenu>
+        {croppingItem && (
+            <Suspense fallback={null}>
+                <CropOverlay
+                    imageSrc={croppingItem.src || ''}
+                    imageWidth={croppingItem.width || 200}
+                    imageHeight={croppingItem.height || 100}
+                    initialCrop={croppingItem.crop}
+                    onCrop={handleCropApply}
+                    onClose={handleCropClose}
+                />
+            </Suspense>
+        )}
+        </>
     )
 })
