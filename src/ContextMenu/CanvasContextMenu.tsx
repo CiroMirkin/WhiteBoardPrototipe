@@ -6,11 +6,12 @@ interface CanvasContextMenuProps {
   onResize: (id: string) => void
   onDownload?: (id: string) => void
   isImageFn?: (id: string) => boolean
+  isArrowFn?: (id: string) => boolean
   onClose?: (e?: React.MouseEvent) => void
   children: (showMenu: (id: string, x: number, y: number) => void, closeMenu: (e?: React.MouseEvent) => void) => React.ReactNode
 }
 
-export const CanvasContextMenu = ({ onDelete, onResize, onDownload, isImageFn, onClose, children }: CanvasContextMenuProps) => {
+export const CanvasContextMenu = ({ onDelete, onResize, onDownload, isImageFn, isArrowFn, onClose, children }: CanvasContextMenuProps) => {
   const [contextMenu, setContextMenu] = useState<{ visible: boolean, x: number, y: number, itemId: string }>({ visible: false, x: 0, y: 0, itemId: '' })
 
   const showMenu = (id: string, x: number, y: number) => {
@@ -49,6 +50,7 @@ export const CanvasContextMenu = ({ onDelete, onResize, onDownload, isImageFn, o
           onClose={closeMenu}
           onDownload={onDownload ? handleDownload : undefined}
           isImage={isImageFn ? isImageFn(contextMenu.itemId) : false}
+          showResize={isArrowFn ? !isArrowFn(contextMenu.itemId) : true}
         />
       )}
     </>
