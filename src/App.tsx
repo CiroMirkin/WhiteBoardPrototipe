@@ -15,7 +15,7 @@ registerPlugin(FilePondPluginImagePreview, FilePondPluginImageExifOrientation)
 
 function App() {
   const canvasRef = useRef<HTMLDivElement>(null)
-  const [activeTool, setActiveTool] = useState<'text' | 'image' | 'arrow'>('arrow')
+  const [activeTool, setActiveTool] = useState<'select' | 'text' | 'image' | 'arrow'>('select')
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -23,7 +23,9 @@ function App() {
         return
       }
       
-      if (e.key.toLowerCase() === 't') {
+      if (e.key.toLowerCase() === 'v') {
+        setActiveTool('select')
+      } else if (e.key.toLowerCase() === 't') {
         setActiveTool('text')
       } else if (e.key.toLowerCase() === 'a') {
         setActiveTool('arrow')

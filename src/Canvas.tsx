@@ -109,6 +109,11 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
         }
     }
 
+    const handleItemMouseDownWrapper = useCallback((id: string, clientX: number, clientY: number) => {
+        if (activeTool !== 'select') return
+        handleItemMouseDown(id, clientX, clientY)
+    }, [activeTool, handleItemMouseDown])
+
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         if (activeTool === 'arrow') {
             handleArrowMouseDown(e)
@@ -301,7 +306,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
                                 isDragging={draggingId === file.id}
                                 isResizing={resizingId === file.id}
                                 onItemClick={handleImageClick}
-                                onItemMouseDown={handleItemMouseDown}
+                                onItemMouseDown={handleItemMouseDownWrapper}
                                 onContextMenu={showMenu}
                                 refCallback={refCallback}
                                 onResizeStart={(position, e) => handleResizeStart(file.id, position, e.clientX, e.clientY)}
