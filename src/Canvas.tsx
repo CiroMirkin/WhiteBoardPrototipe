@@ -14,9 +14,10 @@ import { ArrowItem } from './components/ArrowItem'
 
 interface CanvasProps {
     activeTool?: 'select' | 'text' | 'image' | 'arrow'
+    onToolChange?: (tool: 'select' | 'text' | 'image' | 'arrow') => void
 }
 
-export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 'select' }, ref) => {
+export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 'select', onToolChange }, ref) => {
     const { uploadedFiles, setUploadedFiles, arrows, setArrows, addArrow, updateArrow, removeArrow } = useFiles()
     const { zoom, setZoom, panX, panY, setPan } = useZoom()
     const localRef = useRef<HTMLDivElement>(null)
@@ -247,6 +248,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
                     onClick={(e) => { closeMenu(e); handleCanvasClick() }}
+                    onDoubleClick={() => activeTool === 'arrow' && onToolChange?.('select')}
                     className={`viewport ${isPanning || draggingId ? 'active' : ''}`}
                     style={{ cursor: activeTool === 'arrow' ? 'crosshair' : undefined }}
                 >

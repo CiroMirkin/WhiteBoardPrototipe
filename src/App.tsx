@@ -62,7 +62,7 @@ function App() {
             onToolChange={setActiveTool}
           />
           <ZoomContainer>
-            <Canvas ref={canvasRef} activeTool={activeTool} />
+            <Canvas ref={canvasRef} activeTool={activeTool} onToolChange={setActiveTool} />
           </ZoomContainer>
         </div>
       </ZoomProvider>
