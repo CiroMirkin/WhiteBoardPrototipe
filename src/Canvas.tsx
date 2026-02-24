@@ -9,10 +9,15 @@ import { useCanvasPanning } from './hooks/useCanvasPanning'
 import { useItemResizing } from './hooks/useItemResizing'
 import { useCanvasZooming } from './hooks/useCanvasZooming'
 import { useItemKeyboardShortcuts } from './hooks/useItemKeyboardShortcuts'
+import { useArrowDrawing } from './hooks/useArrowDrawing'
+import { ArrowItem } from './components/ArrowItem'
 
+interface CanvasProps {
+    activeTool?: 'select' | 'text' | 'image' | 'arrow'
+}
 
-export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
-    const { uploadedFiles, setUploadedFiles } = useFiles()
+export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 'select' }, ref) => {
+    const { uploadedFiles, setUploadedFiles, arrows, setArrows, addArrow, updateArrow, removeArrow } = useFiles()
     const { zoom, setZoom, panX, panY, setPan } = useZoom()
     const localRef = useRef<HTMLDivElement>(null)
     const innerRef = useRef<HTMLDivElement>(null)
@@ -26,6 +31,58 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
     const { resizingId, setResizingId, handleResizeWheel, handleResizeStart } = useItemResizing(uploadedFiles, setUploadedFiles, itemRefs, zoom, panX)
     const { handleZoomWheel } = useCanvasZooming(zoom, panX, panY, setZoom, setPan, localRef)
     useItemKeyboardShortcuts(uploadedFiles, setUploadedFiles, itemRefs)
+
+    const { isDrawing, currentArrow, handleMouseDown: handleArrowMouseDown, handleMouseMove: handleArrowMouseMove, handleMouseUp: handleArrowMouseUp } = useArrowDrawing({
+        zoom,
+        panX,
+        panY,
+        addArrow,
+        isArrowMode: activeTool === 'arrow'
+    })
+
+    const handleArrowSelect = useCallback((id: string) => {
+        setArrows(prev => prev.map(a => ({ ...a, selected: a.id === id })))
+    }, [setArrows])
+
+    const handleArrowEndpointDrag = useCallback((id: string, endpoint: 'start' | 'end', x: number, y: number) => {
+        if (endpoint === 'start') {
+            updateArrow(id, { x1: x, y1: y })
+        } else {
+            updateArrow(id, { x2: x, y2: y })
+        }
+    }, [updateArrow])
+
+    const handleArrowDrag = useCallback((id: string, dx: number, dy: number) => {
+        setArrows(prev => prev.map(a => {
+            if (a.id !== id) return a
+            return {
+                ...a,
+                x1: a.x1 + dx,
+                y1: a.y1 + dy,
+                x2: a.x2 + dx,
+                y2: a.y2 + dy
+            }
+        }))
+    }, [setArrows])
+
+    const handleCanvasClick = useCallback(() => {
+        if (activeTool === 'select') {
+            setArrows(prev => prev.map(a => ({ ...a, selected: false })))
+        }
+    }, [activeTool, setArrows])
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                const selectedArrow = arrows.find(a => a.selected)
+                if (selectedArrow) {
+                    removeArrow(selectedArrow.id)
+                }
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [arrows, removeArrow])
 
     const refCallback = useCallback((id: string, el: HTMLElement | null) => {
         if (el) {
@@ -53,18 +110,30 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
     }
 
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
-        handlePanMouseDown(e)
-    }, [handlePanMouseDown])
+        if (activeTool === 'arrow') {
+            handleArrowMouseDown(e)
+        } else {
+            handlePanMouseDown(e)
+        }
+    }, [activeTool, handleArrowMouseDown, handlePanMouseDown])
 
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
-        handlePanMouseMove(e)
-        handleDragMouseMove(e)
-    }, [handlePanMouseMove, handleDragMouseMove])
+        if (activeTool === 'arrow' && isDrawing) {
+            handleArrowMouseMove(e)
+        } else {
+            handlePanMouseMove(e)
+            handleDragMouseMove(e)
+        }
+    }, [activeTool, isDrawing, handleArrowMouseMove, handlePanMouseMove, handleDragMouseMove])
 
     const handleMouseUp = useCallback((e: React.MouseEvent) => {
-        handlePanMouseUp(e)
-        handleDragMouseUp()
-    }, [handlePanMouseUp, handleDragMouseUp])
+        if (activeTool === 'arrow' && isDrawing) {
+            handleArrowMouseUp()
+        } else {
+            handlePanMouseUp(e)
+            handleDragMouseUp()
+        }
+    }, [activeTool, isDrawing, handleArrowMouseUp, handlePanMouseUp, handleDragMouseUp])
 
     const handleWheel = useCallback((e: Event) => {
         if (resizingId) {
@@ -113,7 +182,7 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
             const element = itemRefs.current.get(item.id)
             if (element) {
                 originalTransforms.set(item.id, element.style.transform)
-                element.style.transform = `translate(${item.x - minX + padding}px, ${item.y - minY + padding}px) ${item.zIndex === 1 ? 'scale(1.05)' : ''}`
+                element.style.transform = `translate(${item.x - minX + padding}px, ${item.y - minY + padding}px)`
             }
         })
         localRef.current.style.width = `${width}px`
@@ -138,7 +207,12 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
     }
 
     const handleDelete = (id: string) => {
-        setUploadedFiles(prev => prev.filter(img => img.id !== id))
+        const isArrow = arrows.some(a => a.id === id)
+        if (isArrow) {
+            removeArrow(id)
+        } else {
+            setUploadedFiles(prev => prev.filter(img => img.id !== id))
+        }
     }
 
     const handleContextMenuClose = (e?: React.MouseEvent) => {
@@ -158,6 +232,7 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
             onClose={handleContextMenuClose}
             onDownload={handleDownload}
             isImageFn={(id) => !!uploadedFiles.find(f => f.id === id)?.src}
+            isArrowFn={(id) => arrows.some(a => a.id === id)}
         >
             {(showMenu, closeMenu) => (
                 <div
@@ -166,19 +241,59 @@ export const Canvas = forwardRef<HTMLDivElement>((_, ref) => {
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
-                    onClick={(e) => closeMenu(e)}
-                    style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#f0f0f0', cursor: isPanning ? 'grabbing' : draggingId ? 'grabbing' : 'default', userSelect: 'none' }}
+                    onClick={(e) => { closeMenu(e); handleCanvasClick() }}
+                    className={`viewport ${isPanning || draggingId ? 'active' : ''}`}
+                    style={{ cursor: activeTool === 'arrow' ? 'crosshair' : undefined }}
                 >
                     <div
                         ref={innerRef}
+                        className="canvas"
                         style={{
-                            width: '100%',
-                            height: '100%',
-                            transform: `scale(${zoom}) translate(${panX}px, ${panY}px)`,
-                            transformOrigin: 'top left',
+                            transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
                             transition: isPanning ? 'none' : 'transform 0.2s ease-out',
                         }}
                     >
+                        <svg 
+                            className="arrows-layer"
+                            onClick={(e) => {
+                                if (e.target === e.currentTarget) {
+                                    handleCanvasClick()
+                                }
+                            }}
+                        >
+                            <defs>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
+                                </marker>
+                                <marker id="arrowhead-selected" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
+                                </marker>
+                            </defs>
+                            {arrows.map(arrow => (
+                                <ArrowItem
+                                    key={arrow.id}
+                                    arrow={arrow}
+                                    onSelect={handleArrowSelect}
+                                    onEndpointDrag={handleArrowEndpointDrag}
+                                    onArrowDrag={handleArrowDrag}
+                                    onContextMenu={(e) => showMenu(arrow.id, e.clientX, e.clientY)}
+                                    zoom={zoom}
+                                    panX={panX}
+                                    panY={panY}
+                                />
+                            ))}
+                            {currentArrow && (
+                                <line
+                                    x1={currentArrow.x1}
+                                    y1={currentArrow.y1}
+                                    x2={currentArrow.x2}
+                                    y2={currentArrow.y2}
+                                    stroke="#ef4444"
+                                    strokeWidth={2}
+                                    markerEnd="url(#arrowhead)"
+                                />
+                            )}
+                        </svg>
                         {uploadedFiles.map((file: CanvasImage) => (
                             <CanvasItem
                                 key={file.id}
