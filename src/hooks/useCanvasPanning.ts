@@ -11,7 +11,7 @@ export const useCanvasPanning = (
   const [lastMouseY, setLastMouseY] = useState(0)
 
   const handlePanMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1) { // Middle mouse button
+    if (e.button === 1 || (e.button === 0 && (e.ctrlKey || e.metaKey))) { // Middle mouse button or Ctrl+Left Click
       setIsPanning(true)
       setLastMouseX(e.clientX)
       setLastMouseY(e.clientY)
@@ -29,7 +29,7 @@ export const useCanvasPanning = (
   }, [isPanning, lastMouseX, lastMouseY, zoom, panX, panY, setPan])
 
   const handlePanMouseUp = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1) {
+    if (e.button === 1 || (e.button === 0 && (e.ctrlKey || e.metaKey))) {
       setIsPanning(false)
     }
   }, [])
