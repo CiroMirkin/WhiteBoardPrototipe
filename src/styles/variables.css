@@ -1,0 +1,43 @@
+:root {
+  /* Zinc color palette */
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-600: #52525b;
+  --color-zinc-700: #3f3f46;
+  --color-zinc-800: #27272a;
+  --color-zinc-900: #18181b;
+  
+  /* Blue accent */
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  
+  /* Red for danger actions */
+  --color-red-50: #fef2f2;
+  --color-red-600: #dc2626;
+  
+  /* Grid */
+  --grid-size: 24px;
+  --grid-color: #e4e4e7;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  
+  /* Z-index layers */
+  --z-canvas: 1;
+  --z-elements: 10;
+  --z-selected: 20;
+  --z-dragging: 50;
+  --z-ui: 20;
+  --z-tooltip: 50;
+  --z-context-menu: 100;
+}

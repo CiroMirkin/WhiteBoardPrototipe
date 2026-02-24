@@ -1,0 +1,44 @@
+/* Canvas Item - Estilos base del elemento */
+.canvas-item-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.canvas-item {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  border: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.canvas-item.dragging {
+  cursor: grabbing;
+  opacity: 0.9;
+}
+
+.canvas-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Text element styles */
+.canvas-text {
+  padding: 0 5px;
+  white-space: nowrap;
+  background-color: rgba(0, 0, 0, 0.15);
+  color: #000;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* Resize handles positioning */
+.canvas-item .resize-handle-container {
+  position: absolute;
+  inset: 0;
+}
