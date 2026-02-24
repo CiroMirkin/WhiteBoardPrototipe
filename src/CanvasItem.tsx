@@ -96,7 +96,7 @@ export const CanvasItem: React.FC<CanvasItemProps> = ({
           <img
             src={item.src}
             alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'fill', pointerEvents: 'none' }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }}
           />
           {isResizing && (
             <ResizeHandles
