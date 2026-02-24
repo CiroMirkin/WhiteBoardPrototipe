@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 
 export const useCanvasZooming = (
   zoom: number,
@@ -8,6 +8,10 @@ export const useCanvasZooming = (
   setPan: (x: number, y: number) => void,
   canvasRef: React.RefObject<HTMLDivElement | null>
 ) => {
+  const stateRef = useRef({ zoom, panX, panY, setZoom, setPan })
+
+  stateRef.current = { zoom, panX, panY, setZoom, setPan }
+
   const handleZoomWheel = useCallback((e: Event) => {
     const wheelEvent = e as WheelEvent
     wheelEvent.preventDefault()
@@ -17,18 +21,20 @@ export const useCanvasZooming = (
     const mouseX = wheelEvent.clientX - rect.left
     const mouseY = wheelEvent.clientY - rect.top
 
-    const canvasMouseX = mouseX / zoom - panX
-    const canvasMouseY = mouseY / zoom - panY
+    const { zoom: currentZoom, panX: currentPanX, panY: currentPanY, setZoom: currentSetZoom, setPan: currentSetPan } = stateRef.current
+
+    const canvasMouseX = (mouseX - currentPanX) / currentZoom
+    const canvasMouseY = (mouseY - currentPanY) / currentZoom
 
     const zoomFactor = wheelEvent.deltaY > 0 ? 0.9 : 1.1
-    const newZoom = Math.max(0.1, Math.min(5, zoom * zoomFactor))
+    const newZoom = Math.max(0.1, Math.min(5, currentZoom * zoomFactor))
 
-    const newPanX = mouseX / newZoom - canvasMouseX
-    const newPanY = mouseY / newZoom - canvasMouseY
+    const newPanX = mouseX - canvasMouseX * newZoom
+    const newPanY = mouseY - canvasMouseY * newZoom
 
-    setZoom(newZoom)
-    setPan(newPanX, newPanY)
-  }, [zoom, panX, panY, setZoom, setPan, canvasRef])
+    currentSetZoom(newZoom)
+    currentSetPan(newPanX, newPanY)
+  }, [canvasRef])
 
   return {
     handleZoomWheel
