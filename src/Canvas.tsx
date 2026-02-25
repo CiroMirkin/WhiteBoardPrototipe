@@ -194,40 +194,22 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
     const downloadBoard = async () => {
         if (!localRef.current) return
         
-        const originalZoom = zoom
-        const originalPanX = panX
-        const originalPanY = panY
+        const { toPng } = await import('html-to-image')
         
         const { minX, minY, maxX, maxY } = getContentBounds()
         const contentWidth = maxX - minX + 100
         const contentHeight = maxY - minY + 100
         
-        setZoom(1)
-        setPan(-minX + 50, -minY + 50)
-        
-        await new Promise(resolve => setTimeout(resolve, 100))
-        
-        const html2canvas = (await import('html2canvas')).default
-        
-        const canvas = await html2canvas(localRef.current, { 
-            useCORS: true, 
-            scale: 3,
+        const dataUrl = await toPng(localRef.current, { 
+            pixelRatio: 3,
             backgroundColor: '#ffffff',
-            onclone: (clonedDoc) => {
-                const clonedViewport = clonedDoc.querySelector('.viewport') as HTMLElement
-                if (clonedViewport) {
-                    clonedViewport.style.width = `${contentWidth}px`
-                    clonedViewport.style.height = `${contentHeight}px`
-                }
-            }
+            width: contentWidth,
+            height: contentHeight
         })
-        
-        setZoom(originalZoom)
-        setPan(originalPanX, originalPanY)
         
         const link = document.createElement('a')
         link.download = 'whiteboard-full.png'
-        link.href = canvas.toDataURL('image/png')
+        link.href = dataUrl
         link.click()
     }
 
@@ -300,6 +282,8 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
                     >
                         <svg 
                             className="arrows-layer"
+                            width="100%"
+                            height="100%"
                             onClick={(e) => {
                                 if (e.target === e.currentTarget) {
                                     handleCanvasClick()
