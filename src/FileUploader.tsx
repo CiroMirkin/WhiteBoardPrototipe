@@ -15,6 +15,15 @@ export function FileUploader() {
         })
     }
 
+    const getImageDimensions = (src: string): Promise<{ width: number; height: number }> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image()
+            img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
+            img.onerror = reject
+            img.src = src
+        })
+    }
+
     const processFile: ProcessServerConfigFunction = async (
         _fieldName,
         file,
@@ -25,6 +34,17 @@ export function FileUploader() {
         try {
             const result = await readFile(file as Blob)
             const id = Math.random().toString(36).substring(2, 9)
+            
+            const dimensions = await getImageDimensions(result)
+            const maxSize = 400
+            let width = dimensions.width
+            let height = dimensions.height
+            
+            if (width > maxSize || height > maxSize) {
+                const scale = maxSize / Math.max(width, height)
+                width = Math.round(width * scale)
+                height = Math.round(height * scale)
+            }
 
             setUploadedFiles((prev) => [
                 ...prev,
@@ -35,6 +55,8 @@ export function FileUploader() {
                     y: 200,
                     zIndex: 1,
                     type: 'img',
+                    width,
+                    height,
                 } as CanvasImage,
             ])
 
