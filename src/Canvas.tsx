@@ -167,6 +167,30 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
 
 
 
+    const getContentBounds = (): { minX: number; minY: number; maxX: number; maxY: number } => {
+        let minX = 0, minY = 0, maxX = 0, maxY = 0
+        
+        uploadedFiles.forEach(file => {
+            const x = file.x
+            const y = file.y
+            const right = x + (file.width || 200)
+            const bottom = y + (file.height || 200)
+            minX = Math.min(minX, x)
+            minY = Math.min(minY, y)
+            maxX = Math.max(maxX, right)
+            maxY = Math.max(maxY, bottom)
+        })
+        
+        arrows.forEach(arrow => {
+            minX = Math.min(minX, arrow.x1, arrow.x2)
+            minY = Math.min(minY, arrow.y1, arrow.y2)
+            maxX = Math.max(maxX, arrow.x1, arrow.x2)
+            maxY = Math.max(maxY, arrow.y1, arrow.y2)
+        })
+        
+        return { minX, minY, maxX, maxY }
+    }
+
     const downloadBoard = async () => {
         if (!localRef.current) return
         
@@ -174,8 +198,12 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
         const originalPanX = panX
         const originalPanY = panY
         
+        const { minX, minY, maxX, maxY } = getContentBounds()
+        const contentWidth = maxX - minX + 100
+        const contentHeight = maxY - minY + 100
+        
         setZoom(1)
-        setPan(0, 0)
+        setPan(-minX + 50, -minY + 50)
         
         await new Promise(resolve => setTimeout(resolve, 100))
         
@@ -185,6 +213,13 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
             useCORS: true, 
             scale: 3,
             backgroundColor: '#ffffff',
+            onclone: (clonedDoc) => {
+                const clonedViewport = clonedDoc.querySelector('.viewport') as HTMLElement
+                if (clonedViewport) {
+                    clonedViewport.style.width = `${contentWidth}px`
+                    clonedViewport.style.height = `${contentHeight}px`
+                }
+            }
         })
         
         setZoom(originalZoom)
