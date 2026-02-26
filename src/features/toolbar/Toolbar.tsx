@@ -1,17 +1,17 @@
 import React from 'react'
-import { FileUploader } from '../FileUploader'
-import CleanBoardBtn from '../CleanBoardBtn'
-import AddText from '../AddText'
-import './header.css'
+import { FileUploader } from '../../FileUploader'
+import CleanBoardBtn from '../../CleanBoardBtn'
+import AddText from '../../AddText'
+import './toolbar.css'
 
-interface HeaderProps {
+interface ToolbarProps {
   onDownload: () => void
   onFullDownload: () => void
   activeTool: 'select' | 'text' | 'image' | 'arrow'
   onToolChange: (tool: 'select' | 'text' | 'image' | 'arrow') => void
 }
 
-export const Header: React.FC<HeaderProps> = ({ onDownload, onFullDownload, activeTool, onToolChange }) => {
+export const Toolbar: React.FC<ToolbarProps> = ({ onDownload, onFullDownload, activeTool, onToolChange }) => {
   const handleToolClick = (tool: 'select' | 'text' | 'image' | 'arrow') => {
     onToolChange(tool === activeTool ? 'select' : tool)
   }

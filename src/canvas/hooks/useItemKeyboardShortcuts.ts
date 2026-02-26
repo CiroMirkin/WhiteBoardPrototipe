@@ -1,16 +1,19 @@
-import { useEffect } from 'react'
-import type { CanvasImage } from '../types'
+import { useEffect, useRef } from 'react'
+import type { CanvasImage } from '../../types'
 
 export const useItemKeyboardShortcuts = (
   uploadedFiles: CanvasImage[],
   setUploadedFiles: React.Dispatch<React.SetStateAction<CanvasImage[]>>,
   itemRefs: React.RefObject<Map<string, HTMLElement>>
 ) => {
+  const uploadedFilesRef = useRef(uploadedFiles)
+  uploadedFilesRef.current = uploadedFiles
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && (e.key === '+' || e.key === '=' || e.key === '-')) {
         e.preventDefault()
-        const selected = uploadedFiles.find(f => f.zIndex === 1)
+        const selected = uploadedFilesRef.current.find(f => f.zIndex === 1)
         if (selected) {
           const element = itemRefs.current.get(selected.id)
           if (element) {
@@ -28,5 +31,5 @@ export const useItemKeyboardShortcuts = (
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [uploadedFiles, setUploadedFiles, itemRefs])
+  }, [setUploadedFiles, itemRefs])
 }
