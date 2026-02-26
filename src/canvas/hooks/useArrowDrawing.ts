@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import type { Arrow } from '../types'
+import type { Arrow } from '../../types'
 
 interface UseArrowDrawingProps {
     zoom: number

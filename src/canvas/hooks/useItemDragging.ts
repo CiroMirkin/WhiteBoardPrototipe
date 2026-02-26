@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
-import type { CanvasImage } from '../types'
-import { updateItemPosition } from '../utils/canvasUtils'
+import type { CanvasImage } from '../../types'
+import { updateItemPosition } from '../../utils/canvasUtils'
 
 export const useItemDragging = (
   uploadedFiles: CanvasImage[],

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import type { CanvasImage } from '../types'
-import { updateItemPositionAndSize } from '../utils/canvasUtils'
-import type { HandlePosition } from '../components/ResizeHandles'
+import type { CanvasImage } from '../../types'
+import { updateItemPositionAndSize } from '../../utils/canvasUtils'
+import type { HandlePosition } from '../../components/ResizeHandles'
 
 interface ResizeDragState {
   position: HandlePosition
