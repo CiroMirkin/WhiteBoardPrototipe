@@ -6,5 +6,5 @@
 @import './styles/ui.css';
 
 /* Estilos legacy conservados */
-@import './components/header.css';
-@import './ContextMenu/contextMenu.css';
+@import './features/toolbar/toolbar.css';
+@import './components/contextMenu.css';

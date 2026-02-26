@@ -1,7 +1,7 @@
-import { useFiles } from './useFiles'
+import { useWhiteboardStore } from './store/useWhiteboardStore'
 
 function CleanBoardBtn() {
-    const { setUploadedFiles, clearArrows } = useFiles()
+    const { setItems: setUploadedFiles, clearArrows } = useWhiteboardStore()
 
     const handleClearBoard = () => {
         if (confirm('¿Estás seguro de limpiar todo el tablero?')) {

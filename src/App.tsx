@@ -1,21 +1,23 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { registerPlugin } from 'react-filepond'
 import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation'
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview'
 import 'filepond/dist/filepond.min.css'
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css'
 
-import { FilesProvider } from './FilesProvider'
+import { WhiteboardProvider } from './store/useWhiteboardStore'
 import { Canvas } from './Canvas'
-import { ZoomContainer } from './Zoom/ZoomContainer'
-import { ZoomProvider } from './Zoom/ZoomContext'
-import { Header } from './components/Header'
+import { Toolbar } from './features/toolbar/Toolbar'
 
 registerPlugin(FilePondPluginImagePreview, FilePondPluginImageExifOrientation)
 
 function App() {
-  const canvasRef = useRef<HTMLDivElement>(null)
   const [activeTool, setActiveTool] = useState<'select' | 'text' | 'image' | 'arrow'>('select')
+  
+  const exportFns = useRef<{ downloadViewport: () => void; downloadFullBoard: () => void }>({
+    downloadViewport: () => {},
+    downloadFullBoard: () => {},
+  })
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -36,40 +38,30 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const handleDownload = async () => {
-    const { toPng } = await import('html-to-image')
-    const dataUrl = await toPng(canvasRef.current!, { 
-      pixelRatio: 3, 
-      backgroundColor: '#ffffff' 
-    })
-    const link = document.createElement('a')
-    link.download = 'whiteboard.png'
-    link.href = dataUrl
-    link.click()
-  }
+  const handleDownload = useCallback(() => {
+    exportFns.current.downloadViewport()
+  }, [])
 
-  const handleFullDownload = () => {
-    if (canvasRef.current) {
-      (canvasRef.current as unknown as HTMLElement & { downloadBoard: () => void }).downloadBoard()
-    }
-  }
+  const handleFullDownload = useCallback(() => {
+    exportFns.current.downloadFullBoard()
+  }, [])
+
+  const handleExportReady = useCallback((fns: { downloadViewport: () => void; downloadFullBoard: () => void }) => {
+    exportFns.current = fns
+  }, [])
 
   return (
-    <FilesProvider>
-      <ZoomProvider>
-        <div style={{ position: 'relative' }}>
-          <Header 
-            onDownload={handleDownload}
-            onFullDownload={handleFullDownload}
-            activeTool={activeTool}
-            onToolChange={setActiveTool}
-          />
-          <ZoomContainer>
-            <Canvas ref={canvasRef} activeTool={activeTool} onToolChange={setActiveTool} />
-          </ZoomContainer>
-        </div>
-      </ZoomProvider>
-    </FilesProvider>
+    <WhiteboardProvider>
+      <div style={{ position: 'relative', overflow: 'hidden', width: '100vw', height: '100vh' }}>
+        <Toolbar 
+          onDownload={handleDownload}
+          onFullDownload={handleFullDownload}
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
+        />
+        <Canvas activeTool={activeTool} onToolChange={setActiveTool} onExportReady={handleExportReady} />
+      </div>
+    </WhiteboardProvider>
   )
 }
 

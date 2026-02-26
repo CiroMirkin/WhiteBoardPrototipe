@@ -1,10 +1,10 @@
 import { FilePond } from 'react-filepond'
 import type { ProcessServerConfigFunction } from 'filepond'
-import { useFiles } from './useFiles'
+import { useWhiteboardStore } from './store/useWhiteboardStore'
 import type { CanvasImage } from './types'
 
 export function FileUploader() {
-    const { setUploadedFiles } = useFiles()
+    const { setItems: setUploadedFiles } = useWhiteboardStore()
 
     const readFile = (file: Blob): Promise<string> => {
         return new Promise((resolve, reject) => {

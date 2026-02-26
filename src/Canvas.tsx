@@ -1,41 +1,48 @@
-import { forwardRef, useRef, useCallback, useEffect, useState, lazy, Suspense } from 'react'
-import { useFiles } from './useFiles'
+import { forwardRef, useRef, useCallback, useEffect, lazy, Suspense } from 'react'
+import { useWhiteboardStore } from './store/useWhiteboardStore'
 import type { CanvasImage } from './types'
-import { useZoom } from './Zoom/useZoom'
+import { useViewport } from './canvas/hooks/useViewport'
+import { ArrowLayer } from './canvas/ArrowLayer'
 import { CanvasItem } from './CanvasItem'
-import { CanvasContextMenu } from './ContextMenu/CanvasContextMenu'
-import { useItemDragging } from './hooks/useItemDragging'
-import { useCanvasPanning } from './hooks/useCanvasPanning'
-import { useItemResizing } from './hooks/useItemResizing'
-import { useCanvasZooming } from './hooks/useCanvasZooming'
-import { useItemKeyboardShortcuts } from './hooks/useItemKeyboardShortcuts'
-import { useArrowDrawing } from './hooks/useArrowDrawing'
-import { ArrowItem } from './components/ArrowItem'
-import { updateItemCrop } from './utils/canvasUtils'
+import { CanvasContextMenu } from './components/CanvasContextMenu'
+import { useItemDragging } from './canvas/hooks/useItemDragging'
+import { useItemResizing } from './canvas/hooks/useItemResizing'
+import { useItemKeyboardShortcuts } from './canvas/hooks/useItemKeyboardShortcuts'
+import { useArrowDrawing } from './canvas/hooks/useArrowDrawing'
+import { useArrowKeyboardShortcuts } from './canvas/hooks/useArrowKeyboardShortcuts'
+import { useCrop } from './features/crop/useCrop'
+import { useCanvasExport } from './canvas/hooks/useCanvasExport'
 
-const CropOverlay = lazy(() => import('./components/CropOverlay').then(module => ({ default: module.CropOverlay })))
+const CropOverlay = lazy(() => import('./features/crop/CropOverlay').then(module => ({ default: module.CropOverlay })))
 
 interface CanvasProps {
     activeTool?: 'select' | 'text' | 'image' | 'arrow'
     onToolChange?: (tool: 'select' | 'text' | 'image' | 'arrow') => void
+    onExportReady?: (fns: { downloadViewport: () => void; downloadFullBoard: () => void }) => void
 }
 
-export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 'select', onToolChange }, ref) => {
-    const { uploadedFiles, setUploadedFiles, arrows, setArrows, addArrow, updateArrow, removeArrow } = useFiles()
-    const { zoom, setZoom, panX, panY, setPan } = useZoom()
+export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 'select', onToolChange, onExportReady }, ref) => {
+    const { items, setItems: setUploadedFiles, arrows, setArrows, addArrow, updateArrow, removeArrow } = useWhiteboardStore()
     const localRef = useRef<HTMLDivElement>(null)
     const innerRef = useRef<HTMLDivElement>(null)
     const itemRefs = useRef(new Map<string, HTMLElement>())
     const THROTTLE_MS = 8 // ~120fps
-    const [croppingItem, setCroppingItem] = useState<CanvasImage | null>(null)
+
+    const { zoom, panX, panY, isPanning, handleZoomWheel, handlePanMouseDown: handlePanMouseDown } = useViewport({ canvasRef: localRef })
+    const { croppingItem, openCrop, applyCrop, closeCrop } = useCrop({ items, setItems: setUploadedFiles })
+    const { downloadViewport, downloadFullBoard } = useCanvasExport({ viewportRef: localRef, canvasRef: innerRef, items, arrows })
+
+    useEffect(() => {
+        if (onExportReady) {
+            onExportReady({ downloadViewport, downloadFullBoard })
+        }
+    }, [onExportReady, downloadViewport, downloadFullBoard])
 
     const { draggingId, handleItemMouseDown, handleDragMouseMove, handleDragMouseUp } = useItemDragging(
-        uploadedFiles, setUploadedFiles, zoom, panX, panY, localRef, itemRefs, THROTTLE_MS
+        items, setUploadedFiles, zoom, panX, panY, localRef, itemRefs, THROTTLE_MS
     )
-    const { isPanning, handlePanMouseDown, handlePanMouseMove, handlePanMouseUp } = useCanvasPanning(zoom, panX, panY, setPan)
-    const { resizingId, setResizingId, handleResizeWheel, handleResizeStart } = useItemResizing(uploadedFiles, setUploadedFiles, itemRefs, zoom, panX)
-    const { handleZoomWheel } = useCanvasZooming(zoom, panX, panY, setZoom, setPan, localRef)
-    useItemKeyboardShortcuts(uploadedFiles, setUploadedFiles, itemRefs)
+    const { resizingId, setResizingId, handleResizeWheel, handleResizeStart } = useItemResizing(items, setUploadedFiles, itemRefs, zoom, panX)
+    useItemKeyboardShortcuts(items, setUploadedFiles, itemRefs)
 
     const { isDrawing, currentArrow, handleMouseDown: handleArrowMouseDown, handleMouseMove: handleArrowMouseMove, handleMouseUp: handleArrowMouseUp } = useArrowDrawing({
         zoom,
@@ -76,18 +83,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
         }
     }, [activeTool, setArrows])
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-                const selectedArrow = arrows.find(a => a.selected)
-                if (selectedArrow) {
-                    removeArrow(selectedArrow.id)
-                }
-            }
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [arrows, removeArrow])
+    useArrowKeyboardShortcuts({ arrows, removeArrow })
 
     const refCallback = useCallback((id: string, el: HTMLElement | null) => {
         if (el) {
@@ -105,7 +101,7 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
     }
 
     const handleDownload = (id: string) => {
-        const item = uploadedFiles.find(f => f.id === id)
+        const item = items.find(f => f.id === id)
         if (item && item.src) {
             const link = document.createElement('a')
             link.href = item.src
@@ -131,19 +127,17 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
         if (activeTool === 'arrow' && isDrawing) {
             handleArrowMouseMove(e)
         } else {
-            handlePanMouseMove(e)
             handleDragMouseMove(e)
         }
-    }, [activeTool, isDrawing, handleArrowMouseMove, handlePanMouseMove, handleDragMouseMove])
+    }, [activeTool, isDrawing, handleArrowMouseMove, handleDragMouseMove])
 
-    const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    const handleMouseUp = useCallback(() => {
         if (activeTool === 'arrow' && isDrawing) {
             handleArrowMouseUp()
         } else {
-            handlePanMouseUp(e)
             handleDragMouseUp()
         }
-    }, [activeTool, isDrawing, handleArrowMouseUp, handlePanMouseUp, handleDragMouseUp])
+    }, [activeTool, isDrawing, handleArrowMouseUp, handleDragMouseUp])
 
     const handleWheel = useCallback((e: Event) => {
         if (resizingId) {
@@ -165,54 +159,6 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
         }
     }, [handleWheel])
 
-
-
-    const getContentBounds = (): { minX: number; minY: number; maxX: number; maxY: number } => {
-        let minX = 0, minY = 0, maxX = 0, maxY = 0
-        
-        uploadedFiles.forEach(file => {
-            const x = file.x
-            const y = file.y
-            const right = x + (file.width || 200)
-            const bottom = y + (file.height || 200)
-            minX = Math.min(minX, x)
-            minY = Math.min(minY, y)
-            maxX = Math.max(maxX, right)
-            maxY = Math.max(maxY, bottom)
-        })
-        
-        arrows.forEach(arrow => {
-            minX = Math.min(minX, arrow.x1, arrow.x2)
-            minY = Math.min(minY, arrow.y1, arrow.y2)
-            maxX = Math.max(maxX, arrow.x1, arrow.x2)
-            maxY = Math.max(maxY, arrow.y1, arrow.y2)
-        })
-        
-        return { minX, minY, maxX, maxY }
-    }
-
-    const downloadBoard = async () => {
-        if (!localRef.current) return
-        
-        const { toPng } = await import('html-to-image')
-        
-        const { minX, minY, maxX, maxY } = getContentBounds()
-        const contentWidth = maxX - minX + 100
-        const contentHeight = maxY - minY + 100
-        
-        const dataUrl = await toPng(localRef.current, { 
-            pixelRatio: 3,
-            backgroundColor: '#ffffff',
-            width: contentWidth,
-            height: contentHeight
-        })
-        
-        const link = document.createElement('a')
-        link.download = 'whiteboard-full.png'
-        link.href = dataUrl
-        link.click()
-    }
-
     const handleDelete = (id: string) => {
         const isArrow = arrows.some(a => a.id === id)
         if (isArrow) {
@@ -220,24 +166,6 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
         } else {
             setUploadedFiles(prev => prev.filter(img => img.id !== id))
         }
-    }
-
-    const handleCrop = (id: string) => {
-        const item = uploadedFiles.find(img => img.id === id)
-        if (item) {
-            setCroppingItem(item)
-        }
-    }
-
-    const handleCropApply = (crop: { x: number; y: number; width: number; height: number; naturalWidth: number; naturalHeight: number }) => {
-        if (croppingItem) {
-            updateItemCrop(setUploadedFiles, croppingItem.id, crop)
-            setCroppingItem(null)
-        }
-    }
-
-    const handleCropClose = () => {
-        setCroppingItem(null)
     }
 
     const handleContextMenuClose = (e?: React.MouseEvent) => {
@@ -257,13 +185,13 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
             onResize={(id) => setResizingId(id)}
             onClose={handleContextMenuClose}
             onDownload={handleDownload}
-            onCrop={handleCrop}
-            isImageFn={(id) => !!uploadedFiles.find(f => f.id === id)?.src}
+            onCrop={openCrop}
+            isImageFn={(id) => !!items.find(f => f.id === id)?.src}
             isArrowFn={(id) => arrows.some(a => a.id === id)}
         >
             {(showMenu, closeMenu) => (
                 <div
-                    ref={(el) => { localRef.current = el; if (el) (el as unknown as HTMLElement & { downloadBoard: () => void }).downloadBoard = downloadBoard; if (ref && typeof ref !== 'function') ref.current = el; }}
+                    ref={(el) => { localRef.current = el; if (ref && typeof ref !== 'function') ref.current = el; }}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
@@ -280,50 +208,19 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
                             transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
                         }}
                     >
-                        <svg 
-                            className="arrows-layer"
-                            width="100%"
-                            height="100%"
-                            onClick={(e) => {
-                                if (e.target === e.currentTarget) {
-                                    handleCanvasClick()
-                                }
-                            }}
-                        >
-                            <defs>
-                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                                    <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
-                                </marker>
-                                <marker id="arrowhead-selected" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                                    <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
-                                </marker>
-                            </defs>
-                            {arrows.map(arrow => (
-                                <ArrowItem
-                                    key={arrow.id}
-                                    arrow={arrow}
-                                    onSelect={handleArrowSelect}
-                                    onEndpointDrag={handleArrowEndpointDrag}
-                                    onArrowDrag={handleArrowDrag}
-                                    onContextMenu={(e) => showMenu(arrow.id, e.clientX, e.clientY)}
-                                    zoom={zoom}
-                                    panX={panX}
-                                    panY={panY}
-                                />
-                            ))}
-                            {currentArrow && (
-                                <line
-                                    x1={currentArrow.x1}
-                                    y1={currentArrow.y1}
-                                    x2={currentArrow.x2}
-                                    y2={currentArrow.y2}
-                                    stroke="#ef4444"
-                                    strokeWidth={2}
-                                    markerEnd="url(#arrowhead)"
-                                />
-                            )}
-                        </svg>
-                        {uploadedFiles.map((file: CanvasImage) => (
+                        <ArrowLayer
+                            arrows={arrows}
+                            currentArrow={currentArrow}
+                            zoom={zoom}
+                            panX={panX}
+                            panY={panY}
+                            onSelect={handleArrowSelect}
+                            onEndpointDrag={handleArrowEndpointDrag}
+                            onDrag={handleArrowDrag}
+                            onContextMenu={showMenu}
+                            onSvgClick={handleCanvasClick}
+                        />
+                        {items.map((file: CanvasImage) => (
                             <CanvasItem
                                 key={file.id}
                                 item={file}
@@ -347,8 +244,8 @@ export const Canvas = forwardRef<HTMLDivElement, CanvasProps>(({ activeTool = 's
                     imageWidth={croppingItem.width || 200}
                     imageHeight={croppingItem.height || 100}
                     initialCrop={croppingItem.crop}
-                    onCrop={handleCropApply}
-                    onClose={handleCropClose}
+                    onCrop={applyCrop}
+                    onClose={closeCrop}
                 />
             </Suspense>
         )}

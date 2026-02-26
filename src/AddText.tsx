@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react"
-import { useFiles } from "./useFiles"
+import { useWhiteboardStore } from "./store/useWhiteboardStore"
 import type { CanvasImage } from "./types"
 
 interface AddTextProps {
@@ -8,7 +8,7 @@ interface AddTextProps {
 
 function AddText({ isActive }: AddTextProps) {
   const [text, setText] = useState("")
-  const { setUploadedFiles } = useFiles()
+  const { setItems: setUploadedFiles } = useWhiteboardStore()
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     if (!text.trim()) return
